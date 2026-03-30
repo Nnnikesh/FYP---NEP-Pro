@@ -30,3 +30,6 @@ next-env.d.ts
 
 # Claude Code (AI assistant config - not part of the project)
 .claude/
+
+# Uploaded files
+backend/uploads/

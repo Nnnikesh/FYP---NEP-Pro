@@ -26,8 +26,36 @@ const upload = multer({
 });
 
 // GET /api/vendors — list all approved vendors (public)
+// Optional query params: ?event_type=Wedding&subcategory=Mandap+Setup
 router.get('/', async (req, res) => {
+  const { event_type, subcategory } = req.query;
   try {
+    // Build an optional EXISTS filter for photo-based filtering
+    const photoFilter = event_type
+      ? `AND EXISTS (
+           SELECT 1 FROM vendor_photos vp
+           WHERE vp.vendor_id = v.id
+             AND vp.event_type = $1
+             ${subcategory ? 'AND vp.subcategory = $2' : ''}
+         )`
+      : '';
+
+    const params = event_type
+      ? subcategory ? [event_type, subcategory] : [event_type]
+      : [];
+
+    // When filtering, also return the first matching preview photo URL
+    const previewSelect = event_type
+      ? `, (
+           SELECT vp.photo_url FROM vendor_photos vp
+           WHERE vp.vendor_id = v.id
+             AND vp.event_type = $1
+             ${subcategory ? 'AND vp.subcategory = $2' : ''}
+           ORDER BY vp.created_at DESC
+           LIMIT 1
+         ) AS filtered_preview`
+      : ', NULL::text AS filtered_preview';
+
     const result = await pool.query(`
       SELECT
         v.id, v.business_name, v.description, v.location,
@@ -35,14 +63,16 @@ router.get('/', async (req, res) => {
         u.name AS contact_name, u.email, u.phone,
         ARRAY_AGG(DISTINCT vs.specialization) FILTER (WHERE vs.specialization IS NOT NULL) AS specializations,
         ARRAY_AGG(DISTINCT svc.service) FILTER (WHERE svc.service IS NOT NULL) AS services
+        ${previewSelect}
       FROM vendors v
       JOIN users u ON u.id = v.user_id
       LEFT JOIN vendor_specializations vs ON vs.vendor_id = v.id
       LEFT JOIN vendor_services svc ON svc.vendor_id = v.id
       WHERE v.status = 'approved'
+      ${photoFilter}
       GROUP BY v.id, u.name, u.email, u.phone
       ORDER BY v.rating DESC
-    `);
+    `, params);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -209,7 +239,7 @@ router.get('/:id/photos', async (req, res) => {
 router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided.' });
 
-  const { caption, event_type } = req.body;
+  const { caption, event_type, subcategory } = req.body;
 
   try {
     const vendorRes = await pool.query('SELECT id FROM vendors WHERE user_id = $1', [req.user.id]);
@@ -218,9 +248,9 @@ router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo
 
     const photoUrl = `/uploads/vendor-photos/${req.file.filename}`;
     const result = await pool.query(
-      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [vendorId, photoUrl, caption || null, event_type || null]
+      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type, subcategory)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [vendorId, photoUrl, caption || null, event_type || null, subcategory || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -270,7 +300,7 @@ router.get('/:id', async (req, res) => {
 
     // Attach photos
     const photos = await pool.query(
-      'SELECT id, photo_url, caption, event_type, created_at FROM vendor_photos WHERE vendor_id = $1 ORDER BY created_at DESC',
+      'SELECT id, photo_url, caption, event_type, subcategory, created_at FROM vendor_photos WHERE vendor_id = $1 ORDER BY created_at DESC',
       [vendor.id]
     );
     vendor.photos = photos.rows;

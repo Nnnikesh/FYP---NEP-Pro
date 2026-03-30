@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx'
 import { LanguageToggle, useLanguage } from '@/components/LanguageToggle.jsx'
 import { useTheme } from '@/components/ThemeProvider.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
-import { Menu, X, Sun, Moon, LogOut, ShieldCheck, User } from 'lucide-react'
+import { Menu, X, Sun, Moon, LogOut, ShieldCheck, User, LayoutDashboard, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils.js'
 
 export function Navbar() {
@@ -18,7 +18,6 @@ export function Navbar() {
   const navItems = [
     { href: '/', label: t('home') },
     { href: '/about', label: t('about') },
-    { href: '/designer', label: t('designer') },
     { href: '/marketplace', label: t('marketplace') },
     { href: '/help', label: t('help') },
   ]
@@ -90,6 +89,21 @@ export function Navbar() {
 
             {user ? (
               <div className="hidden md:flex items-center gap-2">
+                {user.role === 'vendor' && (
+                  <Button asChild variant="ghost" size="sm" className="gap-1">
+                    <Link to="/dashboard/vendor"><LayoutDashboard className="h-4 w-4" />Dashboard</Link>
+                  </Button>
+                )}
+                {user.role === 'host' && (
+                  <>
+                    <Button asChild variant="ghost" size="sm" className="gap-1">
+                      <Link to="/dashboard/client"><LayoutDashboard className="h-4 w-4" />My Bookings</Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm" className="gap-1">
+                      <Link to="/budget"><Wallet className="h-4 w-4" />Budget</Link>
+                    </Button>
+                  </>
+                )}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted text-sm">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium max-w-[120px] truncate">{user.name}</span>
@@ -159,6 +173,21 @@ export function Navbar() {
                     <div className="px-2 py-1 text-sm text-muted-foreground">
                       Signed in as <span className="font-medium text-foreground">{user.name}</span>
                     </div>
+                    {user.role === 'vendor' && (
+                      <Button asChild variant="ghost" size="sm" className="justify-start gap-2" onClick={() => setMobileMenuOpen(false)}>
+                        <Link to="/dashboard/vendor"><LayoutDashboard className="h-4 w-4" />Dashboard</Link>
+                      </Button>
+                    )}
+                    {user.role === 'host' && (
+                      <>
+                        <Button asChild variant="ghost" size="sm" className="justify-start gap-2" onClick={() => setMobileMenuOpen(false)}>
+                          <Link to="/dashboard/client"><LayoutDashboard className="h-4 w-4" />My Bookings</Link>
+                        </Button>
+                        <Button asChild variant="ghost" size="sm" className="justify-start gap-2" onClick={() => setMobileMenuOpen(false)}>
+                          <Link to="/budget"><Wallet className="h-4 w-4" />Budget Planner</Link>
+                        </Button>
+                      </>
+                    )}
                     <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start gap-2">
                       <LogOut className="h-4 w-4" />
                       Logout

@@ -49,6 +49,7 @@ export default function LoginPage() {
       login(data.user, data.token)
 
       if (data.user.role === 'admin') navigate('/admin')
+      else if (data.user.role === 'vendor') navigate('/dashboard/vendor')
       else navigate('/')
     } catch {
       setError('Could not connect to server.')

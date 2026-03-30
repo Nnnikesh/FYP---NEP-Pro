@@ -8,8 +8,14 @@ import AboutPage from './pages/AboutPage.jsx'
 import MarketplacePage from './pages/MarketplacePage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import HelpPage from './pages/HelpPage.jsx'
+import VendorProfilePage from './pages/VendorProfilePage.jsx'
+import VendorDashboard from './pages/VendorDashboard.jsx'
+import ClientDashboard from './pages/ClientDashboard.jsx'
+import BookingPage from './pages/BookingPage.jsx'
+import BudgetPlanner from './pages/BudgetPlanner.jsx'
 import LoginPage from './Auth/LoginPage.jsx'
 import RegistrationPage from './Auth/RegistrationPage.jsx'
+import AdminLoginPage from './Auth/AdminLoginPage.jsx'
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -28,11 +34,38 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<RegistrationPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route element={<MainLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/help" element={<HelpPage />} />
+                <Route path="/vendor/:id" element={<VendorProfilePage />} />
+                <Route path="/budget" element={<BudgetPlanner />} />
+                <Route
+                  path="/dashboard/vendor"
+                  element={
+                    <ProtectedRoute roles={['vendor']}>
+                      <VendorDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/client"
+                  element={
+                    <ProtectedRoute roles={['host']}>
+                      <ClientDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/booking/:vendorId"
+                  element={
+                    <ProtectedRoute roles={['host']}>
+                      <BookingPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/admin"
                   element={

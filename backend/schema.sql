@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS vendor_photos (
     photo_url   VARCHAR(500) NOT NULL,
     caption     VARCHAR(300),
     event_type  VARCHAR(100),           -- e.g. 'Wedding', 'Bratabandha'
+    subcategory VARCHAR(100),           -- e.g. 'Mandap Setup', 'Stage Decoration'
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -164,10 +165,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
 CREATE TRIGGER trg_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS trg_bookings_updated_at ON bookings;
 CREATE TRIGGER trg_bookings_updated_at
     BEFORE UPDATE ON bookings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -187,6 +190,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_vendor_rating ON reviews;
 CREATE TRIGGER trg_vendor_rating
     AFTER INSERT OR UPDATE OR DELETE ON reviews
     FOR EACH ROW EXECUTE FUNCTION refresh_vendor_rating();

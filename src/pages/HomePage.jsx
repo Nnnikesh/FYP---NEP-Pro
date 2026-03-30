@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { useLanguage } from '@/components/LanguageToggle.jsx'
-import { Cable as Cube, FileText, Wallet, Library, Shield, Users } from 'lucide-react'
+import { Images, FileText, Wallet, Library, Shield, Users } from 'lucide-react'
 
 export default function HomePage() {
   const { t } = useLanguage()
@@ -27,7 +27,7 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="text-base">
-                  <Link to="/designer">{t('get_started')}</Link>
+                  <Link to="/marketplace">{t('get_started')}</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="text-base bg-transparent">
                   <Link to="/marketplace">{t('view_marketplace')}</Link>
@@ -54,13 +54,13 @@ export default function HomePage() {
               <div className="absolute inset-0 rounded-lg bg-primary/10 backdrop-blur-3xl" />
               <img
                 src="/traditional-nepali-mandap-wedding-decoration-setup.jpg"
-                alt="3D Event Visualization"
+                alt="Nepali Event Decoration"
                 className="relative z-10 h-full w-full object-cover rounded-lg shadow-2xl"
               />
               <div className="absolute bottom-8 left-8 right-8 z-20 bg-card/95 backdrop-blur-sm rounded-lg border border-border p-4 shadow-lg">
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
-                    <Cube className="h-6 w-6 text-primary" />
+                    <Images className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-semibold">{t('live_3d_preview')}</div>
@@ -85,7 +85,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Cube, title: t('feature_1_title'), desc: t('feature_1_desc'), color: 'primary' },
+              { icon: Images, title: t('feature_1_title'), desc: t('feature_1_desc'), color: 'primary' },
               { icon: FileText, title: t('feature_2_title'), desc: t('feature_2_desc'), color: 'accent' },
               { icon: Wallet, title: t('feature_3_title'), desc: t('feature_3_desc'), color: 'primary' },
               { icon: Library, title: t('feature_4_title'), desc: t('feature_4_desc'), color: 'accent' },
@@ -162,7 +162,7 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Button asChild className="w-full">
-                  <Link to="/designer">{t('start_your_design')}</Link>
+                  <Link to="/marketplace">{t('start_your_design')}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -212,7 +212,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Button asChild size="lg" className="text-base">
-                  <Link to="/designer">{t('launch_designer')}</Link>
+                  <Link to="/marketplace">{t('launch_designer')}</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="text-base bg-transparent">
                   <Link to="/about">{t('learn_more')}</Link>
