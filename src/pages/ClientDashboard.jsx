@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
 import {
   CalendarDays, MapPin, Clock, Store, Star,
-  X, Send, CheckCircle, XCircle,
+  X, Send, CheckCircle, XCircle, CreditCard, Loader2,
 } from 'lucide-react'
 
 const API = 'http://localhost:5001'
@@ -131,6 +131,7 @@ export default function ClientDashboard() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [reviewBooking, setReviewBooking] = useState(null)
+  const [payingId, setPayingId] = useState(null) // booking id currently being redirected to eSewa
 
   const load = async () => {
     try {
@@ -144,6 +145,43 @@ export default function ClientDashboard() {
   }
 
   useEffect(() => { load() }, [token])
+
+  /**
+   * Initiate eSewa payment for a confirmed booking.
+   * Calls /api/payment/initiate → gets signed payload → dynamically submits
+   * a POST form to eSewa's UAT payment URL.
+   * The secret key never touches the frontend.
+   */
+  const payWithEsewa = async (bookingId) => {
+    setPayingId(bookingId)
+    try {
+      const res = await fetch(`${API}/api/payment/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ booking_id: bookingId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'Could not initiate payment.'); return }
+
+      // Dynamically build and submit form to eSewa (required — GET won't work)
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.payment_url
+      Object.entries(data.payload).forEach(([key, value]) => {
+        const input = document.createElement('input')
+        input.type  = 'hidden'
+        input.name  = key
+        input.value = value
+        form.appendChild(input)
+      })
+      document.body.appendChild(form)
+      form.submit()
+    } catch {
+      alert('Payment initiation failed. Please try again.')
+    } finally {
+      setPayingId(null)
+    }
+  }
 
   const cancelBooking = async (bookingId) => {
     if (!confirm('Cancel this booking?')) return
@@ -236,9 +274,16 @@ export default function ClientDashboard() {
                   )}
 
                   {b.agreed_amount && (
-                    <p className="text-sm font-semibold text-primary">
-                      Agreed: NPR {Number(b.agreed_amount).toLocaleString()}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-semibold text-primary">
+                        Agreed: NPR {Number(b.agreed_amount).toLocaleString()}
+                      </p>
+                      {b.payment_status === 'paid' && (
+                        <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3.5 w-3.5" /> Paid via eSewa
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   <div className="flex items-center justify-between gap-2 pt-1">
@@ -256,6 +301,20 @@ export default function ClientDashboard() {
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           Cancel
+                        </Button>
+                      )}
+                      {/* Pay with eSewa — only for confirmed bookings with amount not yet paid */}
+                      {b.status === 'confirmed' && b.agreed_amount && b.payment_status !== 'paid' && (
+                        <Button
+                          size="sm"
+                          className="gap-1 bg-[#60BB46] hover:bg-[#4fa336] text-white"
+                          disabled={payingId === b.id}
+                          onClick={() => payWithEsewa(b.id)}
+                        >
+                          {payingId === b.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <CreditCard className="h-3.5 w-3.5" />}
+                          Pay with eSewa
                         </Button>
                       )}
                       {b.status === 'completed' && (
