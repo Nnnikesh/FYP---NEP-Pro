@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
-import { MapPin, Star, Phone, MessageSquare, Images, ArrowLeft, ZoomIn } from 'lucide-react'
+import { MapPin, Star, Phone, MessageSquare, Images, ArrowLeft, ZoomIn, Send } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext.jsx'
 import Tilt from 'react-parallax-tilt'
 import Lightbox from 'yet-another-react-lightbox'
@@ -14,50 +14,123 @@ const API = 'http://localhost:5001'
 
 // ── Reviews section ───────────────────────────────────────────────────────────
 function ReviewsSection({ vendorId }) {
+  const { user, token } = useAuth()
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [rating, setRating] = useState(0)
+  const [hovered, setHovered] = useState(0)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [reviewError, setReviewError] = useState('')
 
-  useEffect(() => {
+  const loadReviews = () => {
     fetch(`${API}/api/reviews/vendor/${vendorId}`)
       .then((r) => r.json())
       .then((data) => setReviews(Array.isArray(data) ? data : []))
       .catch(() => setReviews([]))
       .finally(() => setLoading(false))
-  }, [vendorId])
-
-  if (loading) return <div className="h-20 bg-muted animate-pulse rounded-lg" />
-
-  if (reviews.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-6">
-        No reviews yet. Be the first to review!
-      </p>
-    )
   }
+
+  useEffect(() => { loadReviews() }, [vendorId])
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault()
+    if (!rating) return
+    setSubmitting(true)
+    setReviewError('')
+    try {
+      const res = await fetch(`${API}/api/reviews/vendor/${vendorId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating, comment }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit review.')
+      setRating(0)
+      setComment('')
+      loadReviews()
+    } catch (err) {
+      setReviewError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const myReview = reviews.find(r => r.reviewer_name === user?.name)
 
   return (
     <div className="space-y-4">
-      {reviews.map((r) => (
-        <Card key={r.id}>
-          <CardContent className="pt-4 pb-4 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-sm">{r.reviewer_name}</span>
-              <div className="flex items-center gap-0.5">
+      {/* Leave a review — only for hosts */}
+      {user?.role === 'host' && (
+        <Card className="border-dashed">
+          <CardContent className="pt-5 pb-5">
+            <h3 className="text-sm font-semibold mb-3">
+              {myReview ? 'Update Your Review' : 'Leave a Review'}
+            </h3>
+            <form onSubmit={handleSubmitReview} className="space-y-3">
+              <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
+                  <button
                     key={s}
-                    className={`h-3.5 w-3.5 ${s <= r.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`}
-                  />
+                    type="button"
+                    onMouseEnter={() => setHovered(s)}
+                    onMouseLeave={() => setHovered(0)}
+                    onClick={() => setRating(s)}
+                  >
+                    <Star
+                      className={`h-6 w-6 transition-colors ${
+                        s <= (hovered || rating) ? 'fill-primary text-primary' : 'text-muted-foreground'
+                      }`}
+                    />
+                  </button>
                 ))}
+                {rating > 0 && <span className="text-sm text-muted-foreground ml-2">{rating}/5</span>}
               </div>
-            </div>
-            {r.comment && <p className="text-sm text-muted-foreground leading-relaxed">{r.comment}</p>}
-            <p className="text-xs text-muted-foreground">
-              {new Date(r.created_at).toLocaleDateString()}
-            </p>
+              <textarea
+                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                placeholder="Share your experience... (optional)"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+              {reviewError && <p className="text-xs text-destructive">{reviewError}</p>}
+              <Button type="submit" size="sm" className="gap-2" disabled={!rating || submitting}>
+                <Send className="h-3.5 w-3.5" />
+                {submitting ? 'Submitting...' : myReview ? 'Update Review' : 'Submit Review'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
-      ))}
+      )}
+
+      {loading ? (
+        <div className="h-20 bg-muted animate-pulse rounded-lg" />
+      ) : reviews.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          No reviews yet. Be the first to review!
+        </p>
+      ) : (
+        reviews.map((r) => (
+          <Card key={r.id}>
+            <CardContent className="pt-4 pb-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-sm">{r.reviewer_name}</span>
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-3.5 w-3.5 ${s <= r.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {r.comment && <p className="text-sm text-muted-foreground leading-relaxed">{r.comment}</p>}
+              <p className="text-xs text-muted-foreground">
+                {new Date(r.created_at).toLocaleDateString()}
+              </p>
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   )
 }
@@ -310,7 +383,11 @@ export default function VendorProfilePage() {
       <div className="flex flex-col sm:flex-row gap-6 items-start">
         <div className="h-24 w-24 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden border border-border">
           {vendor.image_url ? (
-            <img src={vendor.image_url} alt={vendor.business_name} className="w-full h-full object-cover" />
+            <img
+              src={vendor.image_url.startsWith('http') ? vendor.image_url : `${API}${vendor.image_url}`}
+              alt={vendor.business_name}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <span className="text-4xl">🏪</span>
           )}
@@ -356,6 +433,13 @@ export default function VendorProfilePage() {
             <Button asChild className="gap-2">
               <Link to={`/booking/${vendor.id}`}>
                 <MessageSquare className="h-4 w-4" />Book Now
+              </Link>
+            </Button>
+          )}
+          {!user && (
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/login">
+                <MessageSquare className="h-4 w-4" />Login to Book
               </Link>
             </Button>
           )}
