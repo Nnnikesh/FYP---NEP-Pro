@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
+import AdminBottomNav from '@/components/AdminBottomNav.jsx'
 import {
   Users, Store, Image, TrendingUp, CheckCircle, XCircle,
   Clock, Eye, Mail, MessageSquare, RefreshCw, Send, Search, CalendarDays,
@@ -231,7 +233,7 @@ export default function AdminPage() {
     ? [
         { label: 'Total Users', value: stats.totalUsers?.toLocaleString() ?? '—', sub: 'Hosts & Vendors', icon: Users },
         { label: 'Active Vendors', value: stats.totalVendors ?? '—', sub: 'Approved & active', icon: Store },
-        { label: 'Portfolio Photos', value: stats.totalPhotos?.toLocaleString() ?? '—', sub: 'Uploaded by vendors', icon: Image },
+        { label: 'Portfolio Photos', value: stats.totalPhotos?.toLocaleString() ?? '—', sub: 'Uploaded by vendors', icon: Image, href: '/admin/portfolio-photos' },
         { label: 'Total Bookings', value: stats.totalBookings ?? '—', sub: 'All bookings', icon: TrendingUp },
         { label: 'Pending Approvals', value: stats.pendingApprovals ?? '—', sub: 'Action required', icon: Clock, urgent: stats.pendingApprovals > 0 },
         { label: 'Unread Support', value: stats.unreadSupport ?? '—', sub: 'Messages', icon: MessageSquare, urgent: stats.unreadSupport > 0 },
@@ -239,7 +241,7 @@ export default function AdminPage() {
     : []
 
   return (
-    <div className="flex-1 bg-muted/30">
+    <div className="flex-1 bg-muted/30 pb-20">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
@@ -289,24 +291,32 @@ export default function AdminPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {analyticsCards.map((card) => (
-              <Card key={card.label} className={card.urgent ? 'border-2 border-destructive/50' : ''}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{card.label}</p>
-                      <p className="text-3xl font-bold">{card.value}</p>
-                      <p className={`text-xs mt-1 ${card.urgent ? 'text-destructive' : 'text-muted-foreground'}`}>
-                        {card.sub}
-                      </p>
+            {analyticsCards.map((card) => {
+              const cardEl = (
+                <Card
+                  key={card.label}
+                  className={`${card.urgent ? 'border-2 border-destructive/50' : ''} ${card.href ? 'cursor-pointer hover:shadow-md hover:border-primary/40 transition-all' : ''}`}
+                >
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{card.label}</p>
+                        <p className="text-3xl font-bold">{card.value}</p>
+                        <p className={`text-xs mt-1 ${card.urgent ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {card.sub}
+                        </p>
+                      </div>
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <card.icon className="h-6 w-6 text-primary" />
+                      </div>
                     </div>
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <card.icon className="h-6 w-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+              return card.href
+                ? <Link key={card.label} to={card.href} className="block">{cardEl}</Link>
+                : <div key={card.label}>{cardEl}</div>
+            })}
           </div>
         )}
 
@@ -815,6 +825,7 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <AdminBottomNav />
     </div>
   )
 }

@@ -16,6 +16,7 @@ import BudgetPlanner from './pages/BudgetPlanner.jsx'
 import LoginPage from './Auth/LoginPage.jsx'
 import RegistrationPage from './Auth/RegistrationPage.jsx'
 import AdminLoginPage from './Auth/AdminLoginPage.jsx'
+import AdminPortfolioPhotos from './pages/AdminPortfolioPhotos.jsx'
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
@@ -71,6 +72,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['admin']}>
                       <AdminPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/portfolio-photos"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminPortfolioPhotos />
                     </ProtectedRoute>
                   }
                 />

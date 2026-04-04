@@ -101,4 +101,20 @@ router.patch('/users/:id/status', async (req, res) => {
   }
 });
 
+// GET /api/admin/photos — all vendor portfolio photos with vendor info
+router.get('/photos', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT vp.id, vp.photo_url, vp.caption, vp.event_type, vp.subcategory, vp.created_at,
+             v.business_name, v.id AS vendor_id
+      FROM vendor_photos vp
+      JOIN vendors v ON v.id = vp.vendor_id
+      ORDER BY vp.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
