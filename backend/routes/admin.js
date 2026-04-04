@@ -39,16 +39,18 @@ router.get('/vendors', async (req, res) => {
     let query = `
       SELECT v.id, v.business_name, v.location, v.status, v.rating, v.total_reviews,
              v.submitted_at, v.approved_at, v.is_verified,
-             u.name, u.email, u.phone
+             u.name, u.email, u.phone,
+             ARRAY_AGG(DISTINCT vs.specialization) FILTER (WHERE vs.specialization IS NOT NULL) AS specializations
       FROM vendors v
       JOIN users u ON u.id = v.user_id
+      LEFT JOIN vendor_specializations vs ON vs.vendor_id = v.id
     `;
     const params = [];
     if (status) {
       params.push(status);
       query += ` WHERE v.status = $1`;
     }
-    query += ` ORDER BY v.submitted_at DESC`;
+    query += ` GROUP BY v.id, u.name, u.email, u.phone ORDER BY v.submitted_at DESC`;
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {

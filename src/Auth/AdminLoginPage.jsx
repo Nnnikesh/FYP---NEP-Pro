@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
-import { Eye, EyeOff, Lock, Shield } from 'lucide-react'
+import { Eye, EyeOff, Lock, Shield, Mail as MailIcon } from 'lucide-react'
 
 const API = 'http://localhost:5001'
 
@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-200 flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
+                  <MailIcon className="h-4 w-4" />
                   Admin Email
                 </Label>
                 <Input
