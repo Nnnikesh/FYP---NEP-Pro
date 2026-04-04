@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
 import { CalendarDays, MapPin, Send, ArrowLeft, CheckCircle, PartyPopper } from 'lucide-react'
+import LocationPicker from '@/components/LocationPicker.jsx'
 
 const API = 'http://localhost:5001'
 
@@ -126,10 +127,9 @@ export default function BookingPage() {
                 <MapPin className="h-4 w-4" />
                 Event Location
               </label>
-              <Input
-                placeholder="e.g. Banquet Hall, Thamel, Kathmandu"
+              <LocationPicker
                 value={form.event_location}
-                onChange={(e) => setForm({ ...form, event_location: e.target.value })}
+                onChange={(val) => setForm({ ...form, event_location: val })}
               />
             </div>
 
