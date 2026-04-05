@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS bookings (
                         CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed')),
     notes           TEXT,
     agreed_amount   DECIMAL(12,2),
+    payment_status  VARCHAR(20) DEFAULT 'unpaid'
+                        CHECK (payment_status IN ('unpaid', 'paid', 'failed')),
+    transaction_uuid VARCHAR(100) UNIQUE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

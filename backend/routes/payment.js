@@ -10,6 +10,7 @@
 
 const express   = require('express');
 const crypto    = require('crypto');
+const https     = require('https');
 const { v4: uuidv4 } = require('uuid');
 const pool      = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
@@ -39,6 +40,27 @@ function verifySignature(payload) {
   const message = fields.map((f) => `${f}=${payload[f]}`).join(',');
   const expected = crypto.createHmac('sha256', secret).update(message).digest('base64');
   return expected === payload.signature;
+}
+
+/**
+ * Secondary check: call eSewa's Transaction Status API to independently confirm.
+ * TODO (production): ESEWA_STATUS_URL is already set to live URL in .env for production.
+ * Returns the parsed JSON response or null on network error.
+ */
+function checkEsewaStatus({ product_code, total_amount, transaction_uuid }) {
+  return new Promise((resolve) => {
+    const base = process.env.ESEWA_STATUS_URL;
+    const url  = `${base}?product_code=${encodeURIComponent(product_code)}&total_amount=${encodeURIComponent(total_amount)}&transaction_uuid=${encodeURIComponent(transaction_uuid)}`;
+
+    https.get(url, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(body)); }
+        catch { resolve(null); }
+      });
+    }).on('error', () => resolve(null));
+  });
 }
 
 // ── POST /api/payment/initiate ────────────────────────────────────────────────
@@ -120,13 +142,24 @@ router.get('/verify', async (req, res) => {
     const decoded = Buffer.from(data, 'base64').toString('utf-8');
     const payload = JSON.parse(decoded);
 
-    // Signature check
+    // Step 1: HMAC signature check
     if (!verifySignature(payload)) {
       return res.status(400).json({ error: 'Signature mismatch. Payment not verified.' });
     }
 
     if (payload.status !== 'COMPLETE') {
       return res.status(400).json({ error: `Payment status is ${payload.status}, not COMPLETE.` });
+    }
+
+    // Step 2: Secondary confirmation via eSewa Transaction Status API
+    const statusRes = await checkEsewaStatus({
+      product_code:     payload.product_code,
+      total_amount:     payload.total_amount,
+      transaction_uuid: payload.transaction_uuid,
+    });
+    // If the status API responds, confirm it says COMPLETE (non-fatal if API unreachable)
+    if (statusRes && statusRes.status && statusRes.status !== 'COMPLETE') {
+      return res.status(400).json({ error: `eSewa status API returned: ${statusRes.status}` });
     }
 
     // Find booking by transaction_uuid
