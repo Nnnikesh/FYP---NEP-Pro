@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
-import { CalendarDays, MapPin, Send, ArrowLeft, CheckCircle, PartyPopper } from 'lucide-react'
+import { CalendarDays, MapPin, Send, ArrowLeft, CheckCircle, PartyPopper, CreditCard, Banknote } from 'lucide-react'
 import LocationPicker from '@/components/LocationPicker.jsx'
 
 const API = 'http://localhost:5001'
@@ -16,7 +16,7 @@ export default function BookingPage() {
   const { user, token } = useAuth()
 
   const [vendor, setVendor] = useState(null)
-  const [form, setForm] = useState({ event_date: '', event_type: '', event_location: '', notes: '' })
+  const [form, setForm] = useState({ event_date: '', event_type: '', event_location: '', notes: '', payment_method: 'online' })
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -141,6 +141,44 @@ export default function BookingPage() {
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Payment Method</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, payment_method: 'online' })}
+                  className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors
+                    ${form.payment_method === 'online'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  Online (eSewa)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, payment_method: 'cash' })}
+                  className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors
+                    ${form.payment_method === 'cash'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}
+                >
+                  <Banknote className="h-5 w-5" />
+                  Cash
+                </button>
+              </div>
+              {form.payment_method === 'online' && (
+                <p className="text-xs text-muted-foreground">
+                  20% deposit via eSewa on confirmation &bull; 80% balance after the event
+                </p>
+              )}
+              {form.payment_method === 'cash' && (
+                <p className="text-xs text-muted-foreground">
+                  Payment settled directly with the vendor in cash
+                </p>
+              )}
             </div>
 
             {status === 'error' && <p className="text-sm text-destructive">{errorMsg}</p>}

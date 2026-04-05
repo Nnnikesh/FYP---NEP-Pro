@@ -421,11 +421,17 @@ function BookingsTab({ token, onBookingsChange, setConfirm }) {
                     {b.agreed_amount && (
                       <span className="font-medium text-foreground">NPR {Number(b.agreed_amount).toLocaleString()}</span>
                     )}
-                    {b.payment_status === 'paid' && (
-                      <span className="flex items-center gap-1 text-green-600 font-semibold">
-                        <CheckCircle className="h-3.5 w-3.5" /> Paid via eSewa
+                    {b.payment_method === 'cash' ? (
+                      <span className="text-xs text-amber-600 font-medium">Cash</span>
+                    ) : b.payment_status === 'paid' ? (
+                      <span className="flex items-center gap-1 text-green-600 font-semibold text-xs">
+                        <CheckCircle className="h-3.5 w-3.5" /> Fully Paid
                       </span>
-                    )}
+                    ) : b.deposit_status === 'paid' ? (
+                      <span className="flex items-center gap-1 text-blue-600 font-semibold text-xs">
+                        <CheckCircle className="h-3.5 w-3.5" /> Deposit Paid (20%)
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <Badge variant={statusColor[b.status] || 'secondary'} className="capitalize flex-shrink-0">

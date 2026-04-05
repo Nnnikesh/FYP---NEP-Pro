@@ -89,11 +89,13 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // POST /api/bookings — host creates a booking
 router.post('/', authenticate, requireRole('host'), async (req, res) => {
-  const { vendor_id, event_date, event_location, notes, agreed_amount } = req.body;
+  const { vendor_id, event_date, event_location, notes, agreed_amount, payment_method } = req.body;
 
   if (!vendor_id || !event_date) {
     return res.status(400).json({ error: 'vendor_id and event_date are required.' });
   }
+
+  const payMethod = ['online', 'cash'].includes(payment_method) ? payment_method : 'online';
 
   try {
     // Check vendor exists and is approved
@@ -105,9 +107,9 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO bookings (host_id, vendor_id, event_date, event_location, notes, agreed_amount)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [req.user.id, vendor_id, event_date, event_location || null, notes || null, agreed_amount || null]
+      `INSERT INTO bookings (host_id, vendor_id, event_date, event_location, notes, agreed_amount, payment_method)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [req.user.id, vendor_id, event_date, event_location || null, notes || null, agreed_amount || null, payMethod]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

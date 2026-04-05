@@ -143,6 +143,30 @@ CREATE TABLE IF NOT EXISTS support_messages (
 );
 
 -- ============================================================
+-- MIGRATION: Payment method & 20/80 split tracking
+-- Run these ALTER statements on an existing database:
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_method VARCHAR(10) DEFAULT 'online'
+    CHECK (payment_method IN ('online', 'cash'));
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_status VARCHAR(20) DEFAULT 'unpaid'
+    CHECK (deposit_status IN ('unpaid', 'paid', 'failed'));
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_transaction_uuid VARCHAR(100);
+
+-- Extend payment_status to support 'partial' (deposit paid, balance pending)
+DO $$
+BEGIN
+  -- drop old constraint if it doesn't include 'partial'
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'bookings_payment_status_check'
+  ) THEN
+    ALTER TABLE bookings DROP CONSTRAINT bookings_payment_status_check;
+  END IF;
+  ALTER TABLE bookings ADD CONSTRAINT bookings_payment_status_check
+    CHECK (payment_status IN ('unpaid', 'partial', 'paid', 'failed'));
+END $$;
+
+-- ============================================================
 -- INDEXES for performance
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

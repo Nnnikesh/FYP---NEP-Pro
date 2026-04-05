@@ -65,11 +65,23 @@ export default function PaymentSuccess() {
       <CheckCircle className="h-20 w-20 mx-auto text-green-500" />
       <h1 className="text-2xl font-bold">Payment Successful!</h1>
       <p className="text-muted-foreground">
-        Your booking has been confirmed and payment received via eSewa.
+        {info?.payment_type === 'deposit'
+          ? '20% deposit received. The remaining 80% balance is due after the event.'
+          : info?.payment_type === 'balance'
+          ? 'Final 80% balance received. Your booking is fully paid.'
+          : 'Your payment has been received via eSewa.'}
       </p>
 
       {info && (
         <div className="rounded-lg border border-border bg-muted/30 p-4 text-left space-y-2 text-sm">
+          {info.payment_type && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Payment</span>
+              <span className="font-semibold capitalize">
+                {info.payment_type === 'deposit' ? 'Deposit (20%)' : 'Balance (80%)'}
+              </span>
+            </div>
+          )}
           {info.transaction_code && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Transaction ID</span>

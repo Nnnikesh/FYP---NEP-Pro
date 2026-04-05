@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
 import {
   CalendarDays, MapPin, Clock, Store, Star,
-  X, Send, CheckCircle, XCircle, CreditCard, Loader2,
+  X, Send, CheckCircle, XCircle, CreditCard, Loader2, Banknote,
 } from 'lucide-react'
 
 const API = 'http://localhost:5001'
@@ -131,7 +131,7 @@ export default function ClientDashboard() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [reviewBooking, setReviewBooking] = useState(null)
-  const [payingId, setPayingId] = useState(null) // booking id currently being redirected to eSewa
+  const [payingId, setPayingId] = useState(null)   // { id, type } of booking being redirected to eSewa
 
   const load = async () => {
     try {
@@ -152,13 +152,13 @@ export default function ClientDashboard() {
    * a POST form to eSewa's UAT payment URL.
    * The secret key never touches the frontend.
    */
-  const payWithEsewa = async (bookingId) => {
-    setPayingId(bookingId)
+  const payWithEsewa = async (bookingId, paymentType = 'deposit') => {
+    setPayingId({ id: bookingId, type: paymentType })
     try {
       const res = await fetch(`${API}/api/payment/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ booking_id: bookingId }),
+        body: JSON.stringify({ booking_id: bookingId, payment_type: paymentType }),
       })
       const data = await res.json()
       if (!res.ok) { alert(data.error || 'Could not initiate payment.'); return }
@@ -182,6 +182,9 @@ export default function ClientDashboard() {
       setPayingId(null)
     }
   }
+
+  const isPayingDeposit = (id) => payingId?.id === id && payingId?.type === 'deposit'
+  const isPayingBalance = (id) => payingId?.id === id && payingId?.type === 'balance'
 
   const cancelBooking = async (bookingId) => {
     if (!confirm('Cancel this booking?')) return
@@ -274,14 +277,41 @@ export default function ClientDashboard() {
                   )}
 
                   {b.agreed_amount && (
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-semibold text-primary">
-                        Agreed: NPR {Number(b.agreed_amount).toLocaleString()}
-                      </p>
-                      {b.payment_status === 'paid' && (
-                        <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
-                          <CheckCircle className="h-3.5 w-3.5" /> Paid via eSewa
+                    <div className="rounded-md border border-border bg-muted/30 px-3 py-2 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-primary">
+                          Total: NPR {Number(b.agreed_amount).toLocaleString()}
                         </span>
+                        {b.payment_method === 'cash' ? (
+                          <span className="text-xs font-medium flex items-center gap-1 text-amber-600">
+                            <Banknote className="h-3.5 w-3.5" /> Cash Payment
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
+                            <CreditCard className="h-3.5 w-3.5" /> Online (eSewa)
+                          </span>
+                        )}
+                      </div>
+                      {b.payment_method !== 'cash' && (
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          <span className={`flex items-center gap-1 ${b.deposit_status === 'paid' ? 'text-green-600 font-semibold' : ''}`}>
+                            {b.deposit_status === 'paid'
+                              ? <CheckCircle className="h-3 w-3" />
+                              : <span className="h-3 w-3 rounded-full border border-muted-foreground inline-block" />}
+                            Deposit 20% — NPR {(Number(b.agreed_amount) * 0.2).toLocaleString()}
+                          </span>
+                          <span className={`flex items-center gap-1 ${b.payment_status === 'paid' ? 'text-green-600 font-semibold' : ''}`}>
+                            {b.payment_status === 'paid'
+                              ? <CheckCircle className="h-3 w-3" />
+                              : <span className="h-3 w-3 rounded-full border border-muted-foreground inline-block" />}
+                            Balance 80% — NPR {(Number(b.agreed_amount) * 0.8).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      {b.payment_method === 'cash' && b.payment_status === 'paid' && (
+                        <p className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" /> Payment completed
+                        </p>
                       )}
                     </div>
                   )}
@@ -291,7 +321,7 @@ export default function ClientDashboard() {
                       <Clock className="h-3 w-3" />
                       Sent on {new Date(b.created_at).toLocaleDateString()}
                     </p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 justify-end">
                       {b.status === 'pending' && (
                         <Button
                           size="sm"
@@ -303,20 +333,37 @@ export default function ClientDashboard() {
                           Cancel
                         </Button>
                       )}
-                      {/* Pay with eSewa — only for confirmed bookings with amount not yet paid */}
-                      {b.status === 'confirmed' && b.agreed_amount && b.payment_status !== 'paid' && (
+
+                      {/* Deposit (20%) — confirmed + online + deposit not yet paid */}
+                      {b.status === 'confirmed' && b.agreed_amount && b.payment_method !== 'cash' && b.deposit_status !== 'paid' && (
                         <Button
                           size="sm"
                           className="gap-1 bg-[#60BB46] hover:bg-[#4fa336] text-white"
-                          disabled={payingId === b.id}
-                          onClick={() => payWithEsewa(b.id)}
+                          disabled={!!payingId}
+                          onClick={() => payWithEsewa(b.id, 'deposit')}
                         >
-                          {payingId === b.id
+                          {isPayingDeposit(b.id)
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : <CreditCard className="h-3.5 w-3.5" />}
-                          Pay with eSewa
+                          Pay Deposit (20%)
                         </Button>
                       )}
+
+                      {/* Balance (80%) — completed + deposit paid + balance not yet paid */}
+                      {b.status === 'completed' && b.agreed_amount && b.payment_method !== 'cash' && b.deposit_status === 'paid' && b.payment_status !== 'paid' && (
+                        <Button
+                          size="sm"
+                          className="gap-1 bg-[#60BB46] hover:bg-[#4fa336] text-white"
+                          disabled={!!payingId}
+                          onClick={() => payWithEsewa(b.id, 'balance')}
+                        >
+                          {isPayingBalance(b.id)
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <CreditCard className="h-3.5 w-3.5" />}
+                          Pay Balance (80%)
+                        </Button>
+                      )}
+
                       {b.status === 'completed' && (
                         <Button
                           size="sm"
