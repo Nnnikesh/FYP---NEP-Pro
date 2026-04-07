@@ -143,6 +143,12 @@ CREATE TABLE IF NOT EXISTS support_messages (
 );
 
 -- ============================================================
+-- MIGRATION: Multi-date event support & event type
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS event_dates TEXT[];
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS event_type VARCHAR(50);
+
+-- ============================================================
 -- MIGRATION: Payment method & 20/80 split tracking
 -- Run these ALTER statements on an existing database:
 -- ============================================================

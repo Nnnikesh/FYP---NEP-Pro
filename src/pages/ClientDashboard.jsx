@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
 import {
-  CalendarDays, MapPin, Clock, Store, Star,
+  CalendarDays, MapPin, Clock, Store, Star, Sparkles,
   X, Send, CheckCircle, XCircle, CreditCard, Loader2, Banknote,
 } from 'lucide-react'
 
@@ -245,12 +245,21 @@ export default function ClientDashboard() {
               <Card key={b.id} className="border-2 hover:border-primary/30 transition-colors">
                 <CardContent className="pt-5 space-y-3">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="space-y-1.5">
                       <p className="font-semibold flex items-center gap-2">
                         <Store className="h-4 w-4 text-primary" />
                         {b.business_name || 'Vendor'}
                       </p>
-                      <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
+                      {b.event_type && (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+                          style={{ backgroundColor: '#C2570B' }}
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          {b.event_type}
+                        </span>
+                      )}
+                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-4 w-4" />
                           {new Date(b.event_date).toLocaleDateString()}

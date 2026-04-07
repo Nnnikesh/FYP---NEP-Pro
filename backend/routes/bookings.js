@@ -87,14 +87,54 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/bookings — host creates a booking
-router.post('/', authenticate, requireRole('host'), async (req, res) => {
-  const { vendor_id, event_date, event_location, notes, agreed_amount, payment_method } = req.body;
-
-  if (!vendor_id || !event_date) {
-    return res.status(400).json({ error: 'vendor_id and event_date are required.' });
+// POST /api/bookings/check-availability — check if a hotel venue has conflicts
+router.post('/check-availability', async (req, res) => {
+  const { venue_name, dates } = req.body;
+  if (!venue_name || !Array.isArray(dates) || dates.length === 0) {
+    return res.status(400).json({ error: 'venue_name and dates[] are required.' });
   }
 
+  try {
+    // Check single event_date column (legacy bookings) and event_dates array column (new bookings)
+    const result = await pool.query(`
+      SELECT DISTINCT event_date::text AS conflict_date
+      FROM bookings
+      WHERE event_location LIKE $1
+        AND status IN ('confirmed', 'pending')
+        AND event_date = ANY($2::date[])
+      UNION
+      SELECT DISTINCT unnest(event_dates) AS conflict_date
+      FROM bookings
+      WHERE event_location LIKE $1
+        AND status IN ('confirmed', 'pending')
+        AND event_dates && $2::text[]
+    `, [`${venue_name}%`, dates]);
+
+    const conflicting_dates = result.rows
+      .map(r => (r.conflict_date || '').substring(0, 10))
+      .filter(Boolean)
+      .filter(d => dates.includes(d));
+
+    res.json({ available: conflicting_dates.length === 0, conflicting_dates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/bookings — host creates a booking
+router.post('/', authenticate, requireRole('host'), async (req, res) => {
+  const { vendor_id, event_dates, event_date, event_type, event_location, notes, agreed_amount, payment_method } = req.body;
+
+  // Support both single event_date and multi event_dates array
+  const datesArray = Array.isArray(event_dates) && event_dates.length > 0
+    ? event_dates
+    : event_date ? [event_date] : [];
+
+  if (!vendor_id || datesArray.length === 0) {
+    return res.status(400).json({ error: 'vendor_id and at least one event date are required.' });
+  }
+
+  const primaryDate = datesArray[0];
   const payMethod = ['online', 'cash'].includes(payment_method) ? payment_method : 'online';
 
   try {
@@ -107,9 +147,9 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO bookings (host_id, vendor_id, event_date, event_location, notes, agreed_amount, payment_method)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [req.user.id, vendor_id, event_date, event_location || null, notes || null, agreed_amount || null, payMethod]
+      `INSERT INTO bookings (host_id, vendor_id, event_date, event_dates, event_type, event_location, notes, agreed_amount, payment_method)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [req.user.id, vendor_id, primaryDate, datesArray, event_type || null, event_location || null, notes || null, agreed_amount || null, payMethod]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
