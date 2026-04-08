@@ -39,7 +39,6 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors">{t('home')}</Link></li>
               <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">{t('about')}</Link></li>
-              <li><Link to="/designer" className="text-muted-foreground hover:text-primary transition-colors">{t('designer')}</Link></li>
             </ul>
           </div>
 
@@ -49,7 +48,6 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li><Link to="/marketplace" className="text-muted-foreground hover:text-primary transition-colors">{t('marketplace')}</Link></li>
               <li><Link to="/help" className="text-muted-foreground hover:text-primary transition-colors">{t('help')}</Link></li>
-              <li><Link to="/admin" className="text-muted-foreground hover:text-primary transition-colors">{t('admin')}</Link></li>
             </ul>
           </div>
 

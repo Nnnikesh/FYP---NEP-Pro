@@ -26,8 +26,8 @@ const translations = {
     quick_links: 'Quick Links',
     services: 'Services',
     contact: 'Contact',
-    footer_desc: 'Digitizing traditional event management for Nepal with precision 3D visualization.',
-    all_rights_reserved: 'All rights reserved. Built for Nepali traditions.',
+    footer_desc: 'Connecting Nepali event hosts with trusted vendors through real portfolio visualization.',
+    all_rights_reserved: 'All rights reserved. Celebrating Nepali traditions.',
 
     // HomePage Hero
     hero_title: 'Plan Your Perfect Event',
@@ -232,8 +232,8 @@ const translations = {
     quick_links: 'द्रुत लिङ्कहरू',
     services: 'सेवाहरू',
     contact: 'सम्पर्क',
-    footer_desc: 'सटीक ३डी दृश्यावलोकनसँग नेपालको परम्परागत कार्यक्रम व्यवस्थापनलाई डिजिटाइज गर्दै।',
-    all_rights_reserved: 'सर्वाधिकार सुरक्षित। नेपाली परम्पराहरूका लागि निर्मित।',
+    footer_desc: 'वास्तविक पोर्टफोलियो दृश्यावलोकनद्वारा नेपाली कार्यक्रम आयोजकहरूलाई भरोसेमन्द विक्रेताहरूसँग जोड्दै।',
+    all_rights_reserved: 'सर्वाधिकार सुरक्षित। नेपाली परम्पराहरू मनाउँदै।',
 
     // HomePage Hero
     hero_title: 'आफ्नो उत्तम कार्यक्रम योजना गर्नुहोस्',

@@ -29,9 +29,6 @@ export default function HomePage() {
                 <Button asChild size="lg" className="text-base">
                   <Link to="/marketplace">{t('get_started')}</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="text-base bg-transparent">
-                  <Link to="/marketplace">{t('view_marketplace')}</Link>
-                </Button>
               </div>
 
               <div className="grid grid-cols-3 gap-6 pt-8">

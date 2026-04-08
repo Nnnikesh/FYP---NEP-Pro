@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { LanguageProvider } from './components/LanguageToggle.jsx'
 import { ThemeProvider } from './components/ThemeProvider.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
@@ -20,6 +21,12 @@ import AdminPortfolioPhotos from './pages/AdminPortfolioPhotos.jsx'
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
 import PaymentFailure from './pages/PaymentFailure.jsx'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
   if (loading) return null
@@ -34,6 +41,7 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
+            <ScrollToTop />
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<RegistrationPage />} />

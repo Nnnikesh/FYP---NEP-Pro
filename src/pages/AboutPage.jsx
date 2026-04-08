@@ -41,11 +41,11 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
+            <div>
               <img
-                src="/nepali-wedding-planning-discussion-family.jpg"
+                src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800"
                 alt="Event Planning"
-                className="h-full w-full object-cover"
+                style={{ width: '100%', height: 'auto', borderRadius: '12px', objectFit: 'cover', maxHeight: '450px' }}
               />
             </div>
           </div>
@@ -240,27 +240,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <Card className="border-2 border-primary/50 bg-primary/5 max-w-3xl mx-auto">
-            <CardContent className="pt-12 pb-12 text-center space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t('join_digital_revolution')}</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                {t('about_cta_subtitle')}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Button asChild size="lg" className="text-base">
-                  <Link to="/designer">{t('start_designing')}</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="text-base bg-transparent">
-                  <Link to="/marketplace">{t('explore_vendors')}</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
     </>
   )
 }

@@ -410,6 +410,11 @@ function BookingsTab({ token, onBookingsChange, setConfirm }) {
                       </a>
                     )}
                   </div>
+                  <div className="mt-1">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                      🎉 {b.event_type || 'General Event'}
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <CalendarDays className="h-4 w-4" />
