@@ -9,7 +9,7 @@ import {
   Upload, Trash2, CalendarDays, MapPin, Clock, CheckCircle, XCircle,
   Images, Mail, Phone, User, AlertTriangle, TrendingUp, Edit3, Plus, X,
 } from 'lucide-react'
-import { EVENT_CATEGORIES, EVENT_TYPES } from '@/lib/eventCategories.js'
+import { EVENT_SUBCATEGORIES, DESIGN_GROUPS, EVENT_TYPES } from '@/lib/eventCategories.js'
 
 const API = 'http://localhost:5001'
 
@@ -117,15 +117,18 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [caption, setCaption] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [eventType, setEventType] = useState('')
+  const [designGroup, setDesignGroup] = useState('')
   const [subcategory, setSubcategory] = useState('')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
-  const [fileKey, setFileKey] = useState(0) // forces input reset
+  const [fileKey, setFileKey] = useState(0)
   const [error, setError] = useState('')
 
-  const subcategories = eventType ? (EVENT_CATEGORIES[eventType] || []) : []
+  const designGroups = eventType ? (DESIGN_GROUPS[eventType] || []) : []
+  const subcategories = eventType ? (EVENT_SUBCATEGORIES[eventType] || []) : []
 
   const loadPhotos = async () => {
     try {
@@ -159,9 +162,11 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
 
     const formData = new FormData()
     formData.append('photo', file)
-    formData.append('caption', caption)
+    formData.append('caption', title)
     formData.append('event_type', eventType)
+    formData.append('design_name', designGroup)
     formData.append('subcategory', subcategory)
+    formData.append('description', description)
 
     try {
       const res = await fetch(`${API}/api/vendors/photos`, {
@@ -171,13 +176,14 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Upload failed.')
-      // Reset form
       setFile(null)
       setPreview(null)
-      setCaption('')
+      setTitle('')
+      setDescription('')
       setEventType('')
+      setDesignGroup('')
       setSubcategory('')
-      setFileKey(k => k + 1) // reset file input
+      setFileKey(k => k + 1)
       loadPhotos()
     } catch (err) {
       setError(err.message)
@@ -209,37 +215,24 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
         <CardContent className="pt-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary" />
-            Upload Event Photo
+            Upload Portfolio Photo
           </h3>
+
+          {/* Structure guide */}
+          <div className="mb-4 p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-xs space-y-1 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-300">
+            <p className="font-semibold">Portfolio structure: 3 designs × 4 photos each</p>
+            <p>Select the correct Event Type → Design Group → Sub-category so your portfolio stays consistently organised.</p>
+          </div>
+
           <form onSubmit={handleUpload} className="space-y-4">
-            {preview && (
-              <img src={preview} alt="preview" className="w-48 h-48 object-cover rounded-lg border border-border" />
-            )}
-
-            <div>
-              <Input
-                key={fileKey}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={handleFileChange}
-                required
-              />
-              <p className="text-xs text-muted-foreground mt-1">JPG, PNG or WebP — max 5MB</p>
-            </div>
-
-            <Input
-              placeholder="Caption (e.g. Traditional Newari Mandap Setup)"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-            />
-
+            {/* Event Type */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Event Type <span className="text-destructive">*</span>
               </label>
               <select
                 value={eventType}
-                onChange={(e) => { setEventType(e.target.value); setSubcategory('') }}
+                onChange={(e) => { setEventType(e.target.value); setDesignGroup(''); setSubcategory('') }}
                 required
                 className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
@@ -250,10 +243,31 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
               </select>
             </div>
 
+            {/* Design Group — only shown for structured event types */}
+            {eventType && designGroups.length > 0 && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Design Group <span className="text-destructive">*</span>
+                </label>
+                <select
+                  value={designGroup}
+                  onChange={(e) => setDesignGroup(e.target.value)}
+                  required
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Select design group...</option>
+                  {designGroups.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Sub-category */}
             {eventType && subcategories.length > 0 && (
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Decoration Type <span className="text-destructive">*</span>
+                  Sub-category <span className="text-destructive">*</span>
                 </label>
                 <select
                   value={subcategory}
@@ -261,13 +275,54 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
                   required
                   className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 >
-                  <option value="">Select decoration type...</option>
+                  <option value="">Select sub-category...</option>
                   {subcategories.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </div>
             )}
+
+            {/* Photo upload */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Photo <span className="text-destructive">*</span>
+              </label>
+              {preview && (
+                <img src={preview} alt="preview" className="w-48 h-48 object-cover rounded-lg border border-border mb-2" />
+              )}
+              <Input
+                key={fileKey}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleFileChange}
+                required
+              />
+              <p className="text-xs text-muted-foreground">JPG, PNG or WebP — max 5MB</p>
+            </div>
+
+            {/* Title */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Title</label>
+              <Input
+                placeholder="e.g. Traditional Newari Mandap Setup"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            {/* Description (optional) */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Description <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+              </label>
+              <textarea
+                className="w-full min-h-[72px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                placeholder="Describe this photo or decoration setup..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -289,7 +344,7 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
       ) : photos.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Images className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>No photos yet. Upload your first event photo!</p>
+          <p>No photos yet. Upload your first portfolio photo!</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -306,6 +361,11 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
                   {p.event_type && (
                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                       {p.event_type}
+                    </span>
+                  )}
+                  {p.design_name && (
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                      {p.design_name}
                     </span>
                   )}
                   {p.subcategory && (
@@ -410,10 +470,24 @@ function BookingsTab({ token, onBookingsChange, setConfirm }) {
                       </a>
                     )}
                   </div>
-                  <div className="mt-1">
+                  <div className="mt-1 space-y-1.5">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                       🎉 {b.event_type || 'General Event'}
                     </span>
+                    {b.design_name && (
+                      <p className="text-xs font-semibold" style={{ color: '#c2410c' }}>
+                        Design: {b.design_name}
+                      </p>
+                    )}
+                    {b.selected_services && (
+                      <div className="flex flex-wrap gap-1">
+                        {b.selected_services.split(',').map(s => s.trim()).filter(Boolean).map(s => (
+                          <span key={s} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">

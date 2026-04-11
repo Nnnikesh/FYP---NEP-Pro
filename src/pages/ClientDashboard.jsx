@@ -259,6 +259,15 @@ export default function ClientDashboard() {
                           {b.event_type}
                         </span>
                       )}
+                      {b.selected_services && (
+                        <div className="flex flex-wrap gap-1">
+                          {b.selected_services.split(',').map(s => s.trim()).filter(Boolean).map(s => (
+                            <span key={s} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-4 w-4" />

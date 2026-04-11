@@ -43,7 +43,7 @@ export default function AboutPage() {
 
             <div>
               <img
-                src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800"
+                src="/placeholder.jpg"
                 alt="Event Planning"
                 style={{ width: '100%', height: 'auto', borderRadius: '12px', objectFit: 'cover', maxHeight: '450px' }}
               />

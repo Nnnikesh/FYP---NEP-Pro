@@ -61,9 +61,9 @@ async function addPhotos(client, vendorId, photos) {
   await client.query('DELETE FROM vendor_photos WHERE vendor_id = $1', [vendorId]);
   for (const p of photos) {
     await client.query(
-      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type, subcategory)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [vendorId, p.photo_url, p.caption || null, p.event_type || null, p.subcategory || null]
+      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type, subcategory, design_name)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [vendorId, p.photo_url, p.caption || null, p.event_type || null, p.subcategory || null, p.design_name || null]
     );
   }
 }
@@ -109,11 +109,19 @@ async function seed() {
         specializations: ['Newari', 'Traditional'],
         services: ['Mandap Construction', 'Traditional Decor', 'Pooja Setup'],
         photos: [
-          { photo_url: '/uploads/vendor-photos/sample-mandap-1.jpg', caption: 'Newari Mandap Setup', event_type: 'Wedding', subcategory: 'Mandap Setup' },
-          { photo_url: '/uploads/vendor-photos/sample-mandap-2.jpg', caption: 'Stage Decoration', event_type: 'Wedding', subcategory: 'Stage Decoration' },
-          { photo_url: '/uploads/vendor-photos/sample-entrance-1.jpg', caption: 'Floral Entrance', event_type: 'Wedding', subcategory: 'Entrance Decor' },
-          { photo_url: '/uploads/vendor-photos/sample-pooja-1.jpg', caption: 'Pooja Altar Setup', event_type: 'Pooja', subcategory: 'Altar Decoration' },
-          { photo_url: '/uploads/vendor-photos/sample-bratabandha-1.jpg', caption: 'Bratabandha Mandap', event_type: 'Bratabandha', subcategory: 'Bratabandha Mandap' },
+          // Wedding — Design 1: Floral Elegance
+          { photo_url: '/uploads/vendor-photos/FE_ Mandap_Setup.jpg',     caption: 'Mandap Setup',     event_type: 'Wedding', subcategory: 'Mandap Setup',     design_name: 'Floral Elegance' },
+          { photo_url: '/uploads/vendor-photos/FE_Entrance Decor.jpg',    caption: 'Entrance Decor',   event_type: 'Wedding', subcategory: 'Entrance Decor',   design_name: 'Floral Elegance' },
+          { photo_url: '/uploads/vendor-photos/FE_Stage Decoration.jpg',  caption: 'Stage Decoration', event_type: 'Wedding', subcategory: 'Stage Decoration', design_name: 'Floral Elegance' },
+          { photo_url: '/uploads/vendor-photos/FE_Photo Booth.png',       caption: 'Photo Booth',      event_type: 'Wedding', subcategory: 'Photo Booth',      design_name: 'Floral Elegance' },
+          // Wedding — Design 2: Traditional Newari (uploaded via dashboard)
+          { photo_url: '/uploads/vendor-photos/vendor-1775894182457.jpeg', caption: 'Mandap Setup',     event_type: 'Wedding', subcategory: 'Mandap Setup',     design_name: 'Traditional Newari' },
+          { photo_url: '/uploads/vendor-photos/vendor-1775894345092.jpeg', caption: 'Entrance Decor',   event_type: 'Wedding', subcategory: 'Entrance Decor',   design_name: 'Traditional Newari' },
+          { photo_url: '/uploads/vendor-photos/vendor-1775894480815.jpeg', caption: 'Stage Decoration', event_type: 'Wedding', subcategory: 'Stage Decoration', design_name: 'Traditional Newari' },
+          { photo_url: '/uploads/vendor-photos/vendor-1775894534997.jpg',  caption: 'Photo Booth',      event_type: 'Wedding', subcategory: 'Photo Booth',      design_name: 'Traditional Newari' },
+          // Wedding — Design 3: Royal Classic — no photos yet
+          // Bratabandha — no photos yet
+          // Pooja — no photos yet
         ],
       },
       {
@@ -128,12 +136,7 @@ async function seed() {
         },
         specializations: ['Floral', 'Modern'],
         services: ['Floral Arches', 'Bouquets', 'Venue Decoration'],
-        photos: [
-          { photo_url: '/uploads/vendor-photos/sample-floral-1.jpg', caption: 'Floral Arrangements', event_type: 'Wedding', subcategory: 'Floral Arrangements' },
-          { photo_url: '/uploads/vendor-photos/sample-floral-2.jpg', caption: 'Entrance Flower Arch', event_type: 'Wedding', subcategory: 'Entrance Decor' },
-          { photo_url: '/uploads/vendor-photos/sample-birthday-1.jpg', caption: 'Birthday Balloon Decor', event_type: 'Birthday Party', subcategory: 'Balloon Decoration' },
-          { photo_url: '/uploads/vendor-photos/sample-engagement-1.jpg', caption: 'Engagement Flowers', event_type: 'Engagement', subcategory: 'Floral Arrangements' },
-        ],
+        photos: [],
       },
       {
         user: { name: 'Brahmin Events', email: 'brahminevents@gmail.com', password: 'Vendor@1234', role: 'vendor', phone: '9841000004' },
@@ -147,12 +150,7 @@ async function seed() {
         },
         specializations: ['Brahmin', 'Traditional'],
         services: ['Bratabandha Setup', 'Wedding Ceremonies', 'Pooja Materials'],
-        photos: [
-          { photo_url: '/uploads/vendor-photos/sample-bratabandha-2.jpg', caption: 'Traditional Bratabandha', event_type: 'Bratabandha', subcategory: 'Bratabandha Mandap' },
-          { photo_url: '/uploads/vendor-photos/sample-bratabandha-3.jpg', caption: 'Pooja Setup', event_type: 'Bratabandha', subcategory: 'Pooja Setup' },
-          { photo_url: '/uploads/vendor-photos/sample-pasni-1.jpg', caption: 'Pasni Ceremony', event_type: 'Pasni', subcategory: 'Traditional Setup' },
-          { photo_url: '/uploads/vendor-photos/sample-pooja-2.jpg', caption: 'Diyo & Lighting', event_type: 'Pooja', subcategory: 'Lighting & Diyo Setup' },
-        ],
+        photos: [],
       },
       {
         user: { name: 'Grand Stage', email: 'info@grandstage.com.np', password: 'Vendor@1234', role: 'vendor', phone: '9841000005' },
@@ -166,12 +164,7 @@ async function seed() {
         },
         specializations: ['Corporate', 'Modern'],
         services: ['Stage Design', 'Lighting', 'Sound System'],
-        photos: [
-          { photo_url: '/uploads/vendor-photos/sample-corporate-1.jpg', caption: 'Corporate Stage', event_type: 'Corporate Event', subcategory: 'Stage Setup' },
-          { photo_url: '/uploads/vendor-photos/sample-corporate-2.jpg', caption: 'Banner & Backdrop', event_type: 'Corporate Event', subcategory: 'Banner & Backdrop' },
-          { photo_url: '/uploads/vendor-photos/sample-birthday-2.jpg', caption: 'Birthday Stage', event_type: 'Birthday Party', subcategory: 'Stage & Backdrop' },
-          { photo_url: '/uploads/vendor-photos/sample-wedding-lighting.jpg', caption: 'Wedding Lighting', event_type: 'Wedding', subcategory: 'Lighting Setup' },
-        ],
+        photos: [],
       },
       {
         user: { name: 'Thakuri Decor', email: 'thakuridecor@yahoo.com', password: 'Vendor@1234', role: 'vendor', phone: '9841000006' },
@@ -185,11 +178,7 @@ async function seed() {
         },
         specializations: ['Thakuri', 'Traditional'],
         services: ['Cultural Decor', 'Traditional Attire', 'Ceremony Planning'],
-        photos: [
-          { photo_url: '/uploads/vendor-photos/sample-osai-1.jpg', caption: 'Osai Ceremony Decor', event_type: 'Osai Ceremony', subcategory: 'Traditional Setup' },
-          { photo_url: '/uploads/vendor-photos/sample-osai-2.jpg', caption: 'Seating Arrangement', event_type: 'Osai Ceremony', subcategory: 'Seating Arrangement' },
-          { photo_url: '/uploads/vendor-photos/sample-wedding-chairs.jpg', caption: 'Wedding Chair Setup', event_type: 'Wedding', subcategory: 'Chair & Table Setup' },
-        ],
+        photos: [],
       },
       {
         user: { name: 'Royal Weddings', email: 'royal@weddingplannersnepal.com', password: 'Vendor@1234', role: 'vendor', phone: '9841000007' },
@@ -203,12 +192,7 @@ async function seed() {
         },
         specializations: ['Luxury', 'Modern'],
         services: ['Full Event Planning', 'Venue Booking', 'Catering', 'Decor'],
-        photos: [
-          { photo_url: '/uploads/vendor-photos/sample-wedding-ceremony.jpg', caption: 'Wedding Ceremony Area', event_type: 'Wedding', subcategory: 'Wedding Ceremony Area' },
-          { photo_url: '/uploads/vendor-photos/sample-wedding-stage.jpg', caption: 'Luxury Stage', event_type: 'Wedding', subcategory: 'Stage Decoration' },
-          { photo_url: '/uploads/vendor-photos/sample-engagement-stage.jpg', caption: 'Engagement Stage', event_type: 'Engagement', subcategory: 'Stage Decoration' },
-          { photo_url: '/uploads/vendor-photos/sample-engagement-table.jpg', caption: 'Engagement Table', event_type: 'Engagement', subcategory: 'Table Setup' },
-        ],
+        photos: [],
       },
     ];
 

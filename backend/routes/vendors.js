@@ -223,10 +223,10 @@ router.put('/profile', authenticate, requireRole('vendor'), async (req, res) => 
 router.get('/:id/photos', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, photo_url, caption, event_type, created_at
+      `SELECT id, photo_url, caption, description, event_type, subcategory, design_name, created_at
        FROM vendor_photos
        WHERE vendor_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY event_type, id ASC`,
       [req.params.id]
     );
     res.json(result.rows);
@@ -239,7 +239,7 @@ router.get('/:id/photos', async (req, res) => {
 router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided.' });
 
-  const { caption, event_type, subcategory } = req.body;
+  const { caption, event_type, subcategory, design_name, description } = req.body;
 
   try {
     const vendorRes = await pool.query('SELECT id FROM vendors WHERE user_id = $1', [req.user.id]);
@@ -248,9 +248,9 @@ router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo
 
     const photoUrl = `/uploads/vendor-photos/${req.file.filename}`;
     const result = await pool.query(
-      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type, subcategory)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [vendorId, photoUrl, caption || null, event_type || null, subcategory || null]
+      `INSERT INTO vendor_photos (vendor_id, photo_url, caption, event_type, subcategory, design_name, description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [vendorId, photoUrl, caption || null, event_type || null, subcategory || null, design_name || null, description || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -300,7 +300,7 @@ router.get('/:id', async (req, res) => {
 
     // Attach photos
     const photos = await pool.query(
-      'SELECT id, photo_url, caption, event_type, subcategory, created_at FROM vendor_photos WHERE vendor_id = $1 ORDER BY created_at DESC',
+      'SELECT id, photo_url, caption, description, event_type, subcategory, design_name, created_at FROM vendor_photos WHERE vendor_id = $1 ORDER BY event_type, id ASC',
       [vendor.id]
     );
     vendor.photos = photos.rows;

@@ -123,7 +123,7 @@ router.post('/check-availability', async (req, res) => {
 
 // POST /api/bookings — host creates a booking
 router.post('/', authenticate, requireRole('host'), async (req, res) => {
-  const { vendor_id, event_dates, event_date, event_type, event_location, notes, agreed_amount, payment_method } = req.body;
+  const { vendor_id, event_dates, event_date, event_type, event_location, notes, agreed_amount, payment_method, selected_services, design_name } = req.body;
 
   // Support both single event_date and multi event_dates array
   const datesArray = Array.isArray(event_dates) && event_dates.length > 0
@@ -137,6 +137,14 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
   const primaryDate = datesArray[0];
   const payMethod = ['online', 'cash'].includes(payment_method) ? payment_method : 'online';
 
+  // Normalise selected_services: accept string or array, store as comma-separated string
+  let servicesText = null;
+  if (Array.isArray(selected_services) && selected_services.length > 0) {
+    servicesText = selected_services.join(',');
+  } else if (typeof selected_services === 'string' && selected_services.trim()) {
+    servicesText = selected_services.trim();
+  }
+
   try {
     // Check vendor exists and is approved
     const vendorCheck = await pool.query(
@@ -147,9 +155,9 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO bookings (host_id, vendor_id, event_date, event_dates, event_type, event_location, notes, agreed_amount, payment_method)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [req.user.id, vendor_id, primaryDate, datesArray, event_type || null, event_location || null, notes || null, agreed_amount || null, payMethod]
+      `INSERT INTO bookings (host_id, vendor_id, event_date, event_dates, event_type, event_location, notes, agreed_amount, payment_method, selected_services, design_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [req.user.id, vendor_id, primaryDate, datesArray, event_type || null, event_location || null, notes || null, agreed_amount || null, payMethod, servicesText, design_name || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

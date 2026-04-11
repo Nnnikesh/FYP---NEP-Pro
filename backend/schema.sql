@@ -158,6 +158,11 @@ ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_status VARCHAR(20) DEFAULT
     CHECK (deposit_status IN ('unpaid', 'paid', 'failed'));
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_transaction_uuid VARCHAR(100);
 
+-- ============================================================
+-- MIGRATION: Selected portfolio services per booking
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS selected_services TEXT;
+
 -- Extend payment_status to support 'partial' (deposit paid, balance pending)
 DO $$
 BEGIN
@@ -171,6 +176,21 @@ BEGIN
   ALTER TABLE bookings ADD CONSTRAINT bookings_payment_status_check
     CHECK (payment_status IN ('unpaid', 'partial', 'paid', 'failed'));
 END $$;
+
+-- ============================================================
+-- MIGRATION: Design package name for portfolio photos
+-- ============================================================
+ALTER TABLE vendor_photos ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
+
+-- ============================================================
+-- MIGRATION: Design name on bookings (from portfolio selection)
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
+
+-- ============================================================
+-- MIGRATION: Optional description field on portfolio photos
+-- ============================================================
+ALTER TABLE vendor_photos ADD COLUMN IF NOT EXISTS description TEXT;
 
 -- ============================================================
 -- INDEXES for performance

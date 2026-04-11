@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Input } from '@/components/ui/input.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { useAuth } from '@/context/AuthContext.jsx'
-import { CalendarDays, MapPin, Send, ArrowLeft, CheckCircle, PartyPopper, CreditCard, Banknote, X, AlertTriangle } from 'lucide-react'
+import { CalendarDays, MapPin, Send, ArrowLeft, CheckCircle, PartyPopper, CreditCard, Banknote, X, AlertTriangle, ListChecks } from 'lucide-react'
 import LocationPicker from '@/components/LocationPicker.jsx'
 
 const API = 'http://localhost:5001'
@@ -25,19 +25,35 @@ function formatDate(dateStr) {
   })
 }
 
+// Map portfolio category names to booking form option values
+function mapEventType(param) {
+  if (!param) return ''
+  const map = { Wedding: 'Wedding', Pooja: 'Pooja' }
+  return map[param] ?? param
+}
+
 export default function BookingPage() {
   const { vendorId } = useParams()
   const navigate = useNavigate()
   const { user, token } = useAuth()
+  const [searchParams] = useSearchParams()
+
+  // Parse pre-selected items and design name from URL
+  const preselectedItems = searchParams.get('items')
+    ? searchParams.get('items').split(',').map(s => s.trim()).filter(Boolean)
+    : []
+  const preselectedDesign = searchParams.get('design') || ''
 
   const [vendor, setVendor] = useState(null)
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
     event_dates: [],
-    event_type: '',
+    event_type: mapEventType(searchParams.get('eventType')),
     event_location: '',
     notes: '',
     payment_method: 'online',
-  })
+    selected_services: preselectedItems,
+    design_name: preselectedDesign,
+  }))
   const [dateInput, setDateInput] = useState('')
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('')
@@ -104,7 +120,11 @@ export default function BookingPage() {
       const res = await fetch(`${API}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ vendor_id: vendorId, ...form }),
+        body: JSON.stringify({
+          vendor_id: vendorId,
+          ...form,
+          selected_services: form.selected_services.length > 0 ? form.selected_services : undefined,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Booking failed.')
@@ -257,6 +277,39 @@ export default function BookingPage() {
                   <option value="Other">Other</option>
                 </select>
               </div>
+
+              {/* Requested Services — read-only when pre-selected from portfolio */}
+              {(form.selected_services.length > 0 || form.design_name) && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <ListChecks className="h-4 w-4" />
+                    Requested Services
+                  </label>
+                  <div className="rounded-md border border-input bg-muted/30 px-3 py-2.5 space-y-2">
+                    {form.design_name && (
+                      <p className="text-xs font-semibold" style={{ color: '#C2570B' }}>
+                        Design: {form.design_name}
+                      </p>
+                    )}
+                    {form.selected_services.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {form.selected_services.map((s) => (
+                          <span
+                            key={s}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white"
+                            style={{ backgroundColor: '#C2570B' }}
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Services selected from vendor portfolio. The vendor will see this list.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
