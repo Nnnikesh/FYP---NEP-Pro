@@ -10,19 +10,30 @@ import LocationPicker from '@/components/LocationPicker.jsx'
 
 const API = 'http://localhost:5001'
 
-const HOTEL_VENUES = [
-  'Norling Grand Resort',
-  'Gokarna Forest Resort',
-  'Hotel Soaltee Crowne Plaza',
-  'Hotel Yak & Yeti',
-  'Hyatt Regency Kathmandu',
-  'Radisson Hotel Kathmandu',
-]
-
 function formatDate(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   })
+}
+
+// Extract a searchable venue name from the stored location string
+// "Hotel Name — Area" → "Hotel Name"
+// "Custom text (lat, lng)" → "Custom text"
+// "Custom text" → "Custom text"
+function extractVenueName(location) {
+  if (!location) return null
+  const withoutArea = location.split(' — ')[0]
+  const withoutCoords = withoutArea.split(' (')[0]
+  const name = withoutCoords.trim()
+  return name.length >= 3 ? name : null
+}
+
+// Format conflicting dates as "on Apr 12, 2026" or "from Apr 12 to Apr 14, 2026"
+function formatConflictDateRange(dates) {
+  if (!dates.length) return ''
+  const sorted = [...dates].sort()
+  if (sorted.length === 1) return `on ${formatDate(sorted[0])}`
+  return `from ${formatDate(sorted[0])} to ${formatDate(sorted[sorted.length - 1])}`
 }
 
 // Map portfolio category names to booking form option values
@@ -58,6 +69,7 @@ export default function BookingPage() {
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('')
   const [conflictModal, setConflictModal] = useState(null) // null | { conflicting_dates: string[] }
+  const [venueConflict, setVenueConflict] = useState(null) // persists after modal close — blocks submit
 
   useEffect(() => {
     if (!token || user?.role !== 'host') {
@@ -70,20 +82,23 @@ export default function BookingPage() {
       .catch(() => {})
   }, [vendorId, token, user])
 
-  // Hotel conflict detection — fires when dates or location change
+  // Venue conflict detection — fires when dates or location change, works for all venues
+  // Clears conflict first so changing venue/dates resets the block
   useEffect(() => {
+    setVenueConflict(null)
     if (!form.event_dates.length || !form.event_location) return
-    const hotelName = HOTEL_VENUES.find((h) => form.event_location.startsWith(h))
-    if (!hotelName) return
+    const venueName = extractVenueName(form.event_location)
+    if (!venueName) return
 
     fetch(`${API}/api/bookings/check-availability`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ venue_name: hotelName, dates: form.event_dates }),
+      body: JSON.stringify({ venue_name: venueName, dates: form.event_dates }),
     })
       .then((r) => r.json())
       .then((data) => {
         if (!data.available && data.conflicting_dates?.length) {
+          setVenueConflict(data.conflicting_dates)
           setConflictModal({ conflicting_dates: data.conflicting_dates })
         }
       })
@@ -112,6 +127,10 @@ export default function BookingPage() {
     if (!form.event_dates.length) {
       setErrorMsg('Please select at least one event date.')
       setStatus('error')
+      return
+    }
+    if (venueConflict) {
+      setConflictModal({ conflicting_dates: venueConflict })
       return
     }
     setStatus('loading')
@@ -158,7 +177,7 @@ export default function BookingPage() {
 
   return (
     <>
-      {/* Hotel conflict warning modal */}
+      {/* Venue conflict warning modal */}
       {conflictModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background rounded-xl border border-border shadow-xl max-w-sm w-full p-6 space-y-4">
@@ -167,17 +186,17 @@ export default function BookingPage() {
                 <AlertTriangle className="h-5 w-5" style={{ color: '#C2570B' }} />
               </div>
               <div>
-                <h2 className="font-semibold text-base">Venue Not Available</h2>
+                <h2 className="font-semibold text-base">Place Already Booked</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  This venue is already booked for{' '}
+                  This place is already booked{' '}
                   <span className="font-medium text-foreground">
-                    {conflictModal.conflicting_dates.map(formatDate).join(', ')}
+                    {formatConflictDateRange(conflictModal.conflicting_dates)}
                   </span>
                   . Please choose different dates or select another venue.
                 </p>
               </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConflictModal(null)}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
@@ -320,6 +339,14 @@ export default function BookingPage() {
                   value={form.event_location}
                   onChange={(val) => setForm({ ...form, event_location: val })}
                 />
+                {venueConflict && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2.5">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#C2570B' }} />
+                    <p className="text-xs" style={{ color: '#C2570B' }}>
+                      This place is already booked {formatConflictDateRange(venueConflict)}. Please select a different venue to continue.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -372,7 +399,7 @@ export default function BookingPage() {
 
               {status === 'error' && <p className="text-sm text-destructive">{errorMsg}</p>}
 
-              <Button type="submit" className="w-full gap-2" disabled={status === 'loading'}>
+              <Button type="submit" className="w-full gap-2" disabled={status === 'loading' || !!venueConflict}>
                 <Send className="h-4 w-4" />
                 {status === 'loading' ? 'Sending...' : 'Send Inquiry'}
               </Button>

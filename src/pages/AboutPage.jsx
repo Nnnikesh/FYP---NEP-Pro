@@ -43,7 +43,7 @@ export default function AboutPage() {
 
             <div>
               <img
-                src="/placeholder.jpg"
+                src="/traditional-nepali-mandap-wedding-decoration-setup.jpg"
                 alt="Event Planning"
                 style={{ width: '100%', height: 'auto', borderRadius: '12px', objectFit: 'cover', maxHeight: '450px' }}
               />

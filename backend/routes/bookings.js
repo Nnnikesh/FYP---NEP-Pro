@@ -87,28 +87,28 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/bookings/check-availability — check if a hotel venue has conflicts
+// POST /api/bookings/check-availability — check if any venue has conflicts on given dates
 router.post('/check-availability', async (req, res) => {
   const { venue_name, dates } = req.body;
-  if (!venue_name || !Array.isArray(dates) || dates.length === 0) {
-    return res.status(400).json({ error: 'venue_name and dates[] are required.' });
+  if (!venue_name || venue_name.trim().length < 3 || !Array.isArray(dates) || dates.length === 0) {
+    return res.status(400).json({ error: 'venue_name (min 3 chars) and dates[] are required.' });
   }
 
   try {
-    // Check single event_date column (legacy bookings) and event_dates array column (new bookings)
+    // ILIKE for case-insensitive matching; supports both hotel and custom venues
     const result = await pool.query(`
       SELECT DISTINCT event_date::text AS conflict_date
       FROM bookings
-      WHERE event_location LIKE $1
+      WHERE event_location ILIKE $1
         AND status IN ('confirmed', 'pending')
         AND event_date = ANY($2::date[])
       UNION
       SELECT DISTINCT unnest(event_dates) AS conflict_date
       FROM bookings
-      WHERE event_location LIKE $1
+      WHERE event_location ILIKE $1
         AND status IN ('confirmed', 'pending')
         AND event_dates && $2::text[]
-    `, [`${venue_name}%`, dates]);
+    `, [`${venue_name.trim()}%`, dates]);
 
     const conflicting_dates = result.rows
       .map(r => (r.conflict_date || '').substring(0, 10))
