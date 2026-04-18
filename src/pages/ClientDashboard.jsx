@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
@@ -128,10 +128,11 @@ function ReviewModal({ booking, token, onClose, onSubmitted }) {
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function ClientDashboard() {
   const { user, token } = useAuth()
+  const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [reviewBooking, setReviewBooking] = useState(null)
-  const [payingId, setPayingId] = useState(null)   // { id, type } of booking being redirected to eSewa
+  const [payingId, setPayingId] = useState(null)   // booking id being redirected for balance
 
   const load = async () => {
     try {
@@ -147,23 +148,19 @@ export default function ClientDashboard() {
   useEffect(() => { load() }, [token])
 
   /**
-   * Initiate eSewa payment for a confirmed booking.
-   * Calls /api/payment/initiate → gets signed payload → dynamically submits
-   * a POST form to eSewa's UAT payment URL.
-   * The secret key never touches the frontend.
+   * Initiate eSewa payment for balance (80%) — called directly without PaymentPage.
    */
-  const payWithEsewa = async (bookingId, paymentType = 'deposit') => {
-    setPayingId({ id: bookingId, type: paymentType })
+  const payBalanceWithEsewa = async (bookingId) => {
+    setPayingId(bookingId)
     try {
       const res = await fetch(`${API}/api/payment/initiate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ booking_id: bookingId, payment_type: paymentType }),
+        body: JSON.stringify({ booking_id: bookingId, payment_type: 'balance' }),
       })
       const data = await res.json()
       if (!res.ok) { alert(data.error || 'Could not initiate payment.'); return }
 
-      // Dynamically build and submit form to eSewa (required — GET won't work)
       const form = document.createElement('form')
       form.method = 'POST'
       form.action = data.payment_url
@@ -182,9 +179,6 @@ export default function ClientDashboard() {
       setPayingId(null)
     }
   }
-
-  const isPayingDeposit = (id) => payingId?.id === id && payingId?.type === 'deposit'
-  const isPayingBalance = (id) => payingId?.id === id && payingId?.type === 'balance'
 
   const cancelBooking = async (bookingId) => {
     if (!confirm('Cancel this booking?')) return
@@ -352,17 +346,14 @@ export default function ClientDashboard() {
                         </Button>
                       )}
 
-                      {/* Deposit (20%) — confirmed + online + deposit not yet paid */}
+                      {/* Deposit (20%) — navigate to PaymentPage for method selection */}
                       {b.status === 'confirmed' && b.agreed_amount && b.payment_method !== 'cash' && b.deposit_status !== 'paid' && (
                         <Button
                           size="sm"
-                          className="gap-1 bg-[#60BB46] hover:bg-[#4fa336] text-white"
-                          disabled={!!payingId}
-                          onClick={() => payWithEsewa(b.id, 'deposit')}
+                          className="gap-1 bg-[#c2410c] hover:bg-[#9a3412] text-white"
+                          onClick={() => navigate(`/payment/${b.id}`)}
                         >
-                          {isPayingDeposit(b.id)
-                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            : <CreditCard className="h-3.5 w-3.5" />}
+                          <CreditCard className="h-3.5 w-3.5" />
                           Pay Deposit (20%)
                         </Button>
                       )}
@@ -373,9 +364,9 @@ export default function ClientDashboard() {
                           size="sm"
                           className="gap-1 bg-[#60BB46] hover:bg-[#4fa336] text-white"
                           disabled={!!payingId}
-                          onClick={() => payWithEsewa(b.id, 'balance')}
+                          onClick={() => payBalanceWithEsewa(b.id)}
                         >
-                          {isPayingBalance(b.id)
+                          {payingId === b.id
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : <CreditCard className="h-3.5 w-3.5" />}
                           Pay Balance (80%)

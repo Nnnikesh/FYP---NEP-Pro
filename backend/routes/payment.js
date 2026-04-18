@@ -1,40 +1,24 @@
 /**
  * eSewa EPay v2 — Payment Routes
  *
- * POST /api/payment/initiate  — build & return the signed form payload
- * GET  /api/payment/verify    — verify eSewa callback, mark booking deposit or balance as paid
+ * POST /api/payment/initiate      — build & return the signed form payload
+ * GET  /api/payment/verify        — verify eSewa callback, mark deposit/balance paid
+ * POST /api/payment/qr-confirm    — QR demo mode: mark deposit paid instantly
  *
- * Payment model: 20% deposit on confirmation, 80% balance after event.
+ * Payment model: 20% deposit on booking confirmation, 80% balance after event.
  * payment_type in the request body: 'deposit' | 'balance'
- *
- * UAT credentials are read from .env.
  */
 
-const express   = require('express');
-const crypto    = require('crypto');
-const https     = require('https');
+const express  = require('express');
+const https    = require('https');
 const { v4: uuidv4 } = require('uuid');
-const pool      = require('../db');
+const pool     = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
+const { generateSignature, verifySignature } = require('../middleware/esewaSignature');
 
 const router = express.Router();
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function generateSignature({ total_amount, transaction_uuid, product_code }) {
-  const secret  = process.env.ESEWA_SECRET;
-  const message = `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
-  return crypto.createHmac('sha256', secret).update(message).digest('base64');
-}
-
-function verifySignature(payload) {
-  const secret = process.env.ESEWA_SECRET;
-  const fields = payload.signed_field_names.split(',');
-  const message = fields.map((f) => `${f}=${payload[f]}`).join(',');
-  const expected = crypto.createHmac('sha256', secret).update(message).digest('base64');
-  return expected === payload.signature;
-}
-
+// ── Secondary status check with eSewa API ──────────────────────────────────────
 function checkEsewaStatus({ product_code, total_amount, transaction_uuid }) {
   return new Promise((resolve) => {
     const base = process.env.ESEWA_STATUS_URL;
@@ -51,7 +35,7 @@ function checkEsewaStatus({ product_code, total_amount, transaction_uuid }) {
   });
 }
 
-// ── POST /api/payment/initiate ────────────────────────────────────────────────
+// ── POST /api/payment/initiate ─────────────────────────────────────────────────
 /**
  * Body: { booking_id, payment_type }
  *   payment_type: 'deposit' (20%) | 'balance' (80%)
@@ -92,7 +76,6 @@ router.post('/initiate', authenticate, requireRole('host'), async (req, res) => 
       }
       chargeAmount = (fullAmount * 0.20).toFixed(2);
     } else {
-      // balance (80%)
       if (booking.deposit_status !== 'paid') {
         return res.status(400).json({ error: 'Please pay the 20% deposit first.' });
       }
@@ -112,7 +95,6 @@ router.post('/initiate', authenticate, requireRole('host'), async (req, res) => 
 
     const signature = generateSignature({ total_amount, transaction_uuid, product_code });
 
-    // Store UUID in the right column so verify knows which payment this is
     if (pType === 'deposit') {
       await pool.query(
         `UPDATE bookings SET deposit_transaction_uuid = $1 WHERE id = $2`,
@@ -126,7 +108,7 @@ router.post('/initiate', authenticate, requireRole('host'), async (req, res) => 
     }
 
     res.json({
-      payment_url: process.env.ESEWA_PAYMENT_URL,
+      payment_url:  process.env.ESEWA_PAYMENT_URL,
       payment_type: pType,
       payload: {
         amount:                   total_amount,
@@ -148,10 +130,10 @@ router.post('/initiate', authenticate, requireRole('host'), async (req, res) => 
   }
 });
 
-// ── GET /api/payment/verify ───────────────────────────────────────────────────
+// ── GET /api/payment/verify ────────────────────────────────────────────────────
 /**
- * Called by the frontend after eSewa redirects to /payment-success?data=<base64>.
- * Detects deposit vs balance by checking which UUID column matches.
+ * Called by PaymentSuccess after eSewa redirects with ?data=<base64>.
+ * Detects deposit vs balance by matching the transaction UUID.
  */
 router.get('/verify', async (req, res) => {
   const { data } = req.query;
@@ -169,7 +151,7 @@ router.get('/verify', async (req, res) => {
       return res.status(400).json({ error: `Payment status is ${payload.status}, not COMPLETE.` });
     }
 
-    // Secondary confirmation
+    // Secondary confirmation from eSewa status API
     const statusRes = await checkEsewaStatus({
       product_code:     payload.product_code,
       total_amount:     payload.total_amount,
@@ -179,7 +161,7 @@ router.get('/verify', async (req, res) => {
       return res.status(400).json({ error: `eSewa status API returned: ${statusRes.status}` });
     }
 
-    // Check deposit UUID first, then balance UUID
+    // Detect payment type by matching UUID column
     let booking = null;
     let pType   = null;
 
@@ -209,9 +191,15 @@ router.get('/verify', async (req, res) => {
       if (booking.deposit_status === 'paid') {
         return res.json({ success: true, booking_id: booking.id, payment_type: 'deposit', already_paid: true });
       }
+      const depositAmount = (Number(booking.agreed_amount) * 0.20).toFixed(2);
       await pool.query(
-        `UPDATE bookings SET deposit_status = 'paid', payment_status = 'partial' WHERE id = $1`,
-        [booking.id]
+        `UPDATE bookings
+         SET deposit_status = 'paid',
+             payment_status = 'partial',
+             paid_amount    = $1,
+             transaction_id = $2
+         WHERE id = $3`,
+        [depositAmount, payload.transaction_code || payload.transaction_uuid, booking.id]
       );
       return res.json({
         success:          true,
@@ -221,13 +209,18 @@ router.get('/verify', async (req, res) => {
         total_amount:     payload.total_amount,
       });
     } else {
-      // balance
       if (booking.payment_status === 'paid') {
         return res.json({ success: true, booking_id: booking.id, payment_type: 'balance', already_paid: true });
       }
+      const balanceAmount = (Number(booking.agreed_amount) * 0.80).toFixed(2);
+      const prevPaid = Number(booking.paid_amount || 0);
       await pool.query(
-        `UPDATE bookings SET payment_status = 'paid' WHERE id = $1`,
-        [booking.id]
+        `UPDATE bookings
+         SET payment_status = 'paid',
+             paid_amount    = $1,
+             transaction_id = $2
+         WHERE id = $3`,
+        [(prevPaid + Number(balanceAmount)).toFixed(2), payload.transaction_code || payload.transaction_uuid, booking.id]
       );
       return res.json({
         success:          true,
@@ -240,6 +233,62 @@ router.get('/verify', async (req, res) => {
   } catch (err) {
     console.error('[payment/verify]', err);
     res.status(500).json({ error: 'Payment verification failed.' });
+  }
+});
+
+// ── POST /api/payment/qr-confirm ───────────────────────────────────────────────
+/**
+ * QR Code Demo Mode — simulates a successful deposit payment.
+ * Marks deposit_status = 'paid', payment_status = 'partial', paid_amount = 20%.
+ *
+ * Body: { booking_id }
+ */
+router.post('/qr-confirm', authenticate, requireRole('host'), async (req, res) => {
+  const { booking_id } = req.body;
+  if (!booking_id) return res.status(400).json({ error: 'booking_id is required.' });
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM bookings WHERE id = $1 AND host_id = $2`,
+      [booking_id, req.user.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Booking not found.' });
+
+    const booking = result.rows[0];
+
+    if (booking.deposit_status === 'paid') {
+      return res.json({ success: true, already_paid: true, booking_id: booking.id });
+    }
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ error: 'Deposit can only be paid after vendor confirms the booking.' });
+    }
+    if (booking.payment_method === 'cash') {
+      return res.status(400).json({ error: 'This booking uses cash payment.' });
+    }
+
+    const depositAmount = (Number(booking.agreed_amount) * 0.20).toFixed(2);
+    const demoTxnId     = `QR-DEMO-${Date.now()}`;
+
+    await pool.query(
+      `UPDATE bookings
+       SET deposit_status = 'paid',
+           payment_status = 'partial',
+           paid_amount    = $1,
+           transaction_id = $2
+       WHERE id = $3`,
+      [depositAmount, demoTxnId, booking_id]
+    );
+
+    res.json({
+      success:        true,
+      booking_id:     booking.id,
+      payment_type:   'deposit',
+      paid_amount:    depositAmount,
+      transaction_id: demoTxnId,
+    });
+  } catch (err) {
+    console.error('[payment/qr-confirm]', err);
+    res.status(500).json({ error: 'QR confirmation failed.' });
   }
 });
 

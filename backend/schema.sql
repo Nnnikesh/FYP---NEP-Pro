@@ -188,6 +188,14 @@ ALTER TABLE vendor_photos ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
 
 -- ============================================================
+-- MIGRATION: eSewa EPay v2 — paid_amount and transaction_id
+-- paid_amount: cumulative amount paid (deposit + balance)
+-- transaction_id: eSewa transaction_code or QR-DEMO-<ts> for demo
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(100);
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS paid_amount DECIMAL(12,2) DEFAULT 0;
+
+-- ============================================================
 -- MIGRATION: Optional description field on portfolio photos
 -- ============================================================
 ALTER TABLE vendor_photos ADD COLUMN IF NOT EXISTS description TEXT;
