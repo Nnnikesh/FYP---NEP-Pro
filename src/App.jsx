@@ -17,6 +17,8 @@ import BudgetPlanner from './pages/BudgetPlanner.jsx'
 import LoginPage from './Auth/LoginPage.jsx'
 import RegistrationPage from './Auth/RegistrationPage.jsx'
 import AdminLoginPage from './Auth/AdminLoginPage.jsx'
+import ForgotPasswordPage from './Auth/ForgotPasswordPage.jsx'
+import ResetPasswordPage from './Auth/ResetPasswordPage.jsx'
 import AdminPortfolioPhotos from './pages/AdminPortfolioPhotos.jsx'
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
 import PaymentFailure from './pages/PaymentFailure.jsx'
@@ -47,6 +49,8 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<RegistrationPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               {/* Payment callback pages — outside MainLayout so no nav chrome */}
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />

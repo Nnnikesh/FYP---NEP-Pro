@@ -138,6 +138,13 @@ export default function LoginPage() {
                     <Lock className="h-4 w-4" />
                     {language === 'en' ? 'Password' : 'पासवर्ड'}
                   </Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs hover:underline"
+                    style={{ color: '#C2570B' }}
+                  >
+                    {language === 'en' ? 'Forgot password?' : 'पासवर्ड भुल्नुभयो?'}
+                  </Link>
                 </div>
                 <div className="relative">
                   <Input

@@ -11,7 +11,14 @@ const bookingRoutes = require('./routes/bookings');
 const reviewRoutes  = require('./routes/reviews');
 const paymentRoutes = require('./routes/payment');
 
+const pool = require('./db');
 const app = express();
+
+// Auto-migrate: add password reset columns if they don't exist
+pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255);
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP;
+`).catch(err => console.error('Migration error:', err.message));
 
 // Middleware
 app.use(cors({
