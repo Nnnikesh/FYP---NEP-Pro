@@ -4,7 +4,6 @@ const { authenticate, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/reviews/vendor/:vendorId — get all reviews for a vendor (public)
 router.get('/vendor/:vendorId', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -21,7 +20,6 @@ router.get('/vendor/:vendorId', async (req, res) => {
   }
 });
 
-// POST /api/reviews/vendor/:vendorId — host submits a review
 router.post('/vendor/:vendorId', authenticate, requireRole('host'), async (req, res) => {
   const { rating, comment } = req.body;
 
@@ -30,23 +28,12 @@ router.post('/vendor/:vendorId', authenticate, requireRole('host'), async (req, 
   }
 
   try {
-    // Check vendor exists and is approved
     const vendorCheck = await pool.query(
       `SELECT id FROM vendors WHERE id = $1 AND status = 'approved'`, [req.params.vendorId]
     );
     if (vendorCheck.rowCount === 0) {
       return res.status(404).json({ error: 'Vendor not found.' });
     }
-
-    // Check host has a completed booking with this vendor (optional guard)
-    // Uncomment to enforce review-after-booking:
-    // const bookingCheck = await pool.query(
-    //   `SELECT id FROM bookings WHERE host_id=$1 AND vendor_id=$2 AND status='completed'`,
-    //   [req.user.id, req.params.vendorId]
-    // );
-    // if (bookingCheck.rowCount === 0) {
-    //   return res.status(403).json({ error: 'You can only review vendors you have booked.' });
-    // }
 
     const result = await pool.query(
       `INSERT INTO reviews (vendor_id, user_id, rating, comment)
@@ -62,7 +49,6 @@ router.post('/vendor/:vendorId', authenticate, requireRole('host'), async (req, 
   }
 });
 
-// DELETE /api/reviews/:id — host deletes their own review
 router.delete('/:id', authenticate, requireRole('host'), async (req, res) => {
   try {
     const result = await pool.query(

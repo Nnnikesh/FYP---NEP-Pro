@@ -1,7 +1,3 @@
-/**
- * Migration: add payment_status and transaction_uuid columns to bookings table.
- * Run once: node scripts/addPaymentFields.js
- */
 require('dotenv').config();
 const pool = require('../db');
 

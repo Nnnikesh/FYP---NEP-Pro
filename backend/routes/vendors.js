@@ -6,7 +6,6 @@ const { authenticate, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ── Multer setup for vendor photo uploads ────────────────────────────────────
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../uploads/vendor-photos'),
   filename: (req, file, cb) => {
@@ -16,7 +15,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image files are allowed.'));
@@ -25,12 +24,9 @@ const upload = multer({
   },
 });
 
-// GET /api/vendors — list all approved vendors (public)
-// Optional query params: ?event_type=Wedding&subcategory=Mandap+Setup
 router.get('/', async (req, res) => {
   const { event_type, subcategory } = req.query;
   try {
-    // Build an optional EXISTS filter for photo-based filtering
     const photoFilter = event_type
       ? `AND EXISTS (
            SELECT 1 FROM vendor_photos vp
@@ -44,7 +40,6 @@ router.get('/', async (req, res) => {
       ? subcategory ? [event_type, subcategory] : [event_type]
       : [];
 
-    // When filtering, also return the first matching preview photo URL
     const previewSelect = event_type
       ? `, (
            SELECT vp.photo_url FROM vendor_photos vp
@@ -79,9 +74,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ── Specific named paths MUST come before /:id ──────────────────────────────
-
-// GET /api/vendors/me — vendor views their own profile
 router.get('/me', authenticate, requireRole('vendor'), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -102,7 +94,6 @@ router.get('/me', authenticate, requireRole('vendor'), async (req, res) => {
   }
 });
 
-// GET /api/vendors/admin/pending — admin: list pending vendor applications
 router.get('/admin/pending', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -122,7 +113,6 @@ router.get('/admin/pending', authenticate, requireRole('admin'), async (req, res
   }
 });
 
-// POST /api/vendors/profile — vendor creates their profile
 router.post('/profile', authenticate, requireRole('vendor'), async (req, res) => {
   const { business_name, description, location, price_range, image_url, specializations, services } = req.body;
 
@@ -168,7 +158,6 @@ router.post('/profile', authenticate, requireRole('vendor'), async (req, res) =>
   }
 });
 
-// PUT /api/vendors/profile — vendor updates their own profile
 router.put('/profile', authenticate, requireRole('vendor'), async (req, res) => {
   const { business_name, description, location, price_range, image_url, specializations, services } = req.body;
 
@@ -217,9 +206,6 @@ router.put('/profile', authenticate, requireRole('vendor'), async (req, res) => 
   }
 });
 
-// ── Photo portfolio endpoints ─────────────────────────────────────────────────
-
-// GET /api/vendors/:id/photos — public: get all photos for a vendor
 router.get('/:id/photos', async (req, res) => {
   try {
     const result = await pool.query(
@@ -235,7 +221,6 @@ router.get('/:id/photos', async (req, res) => {
   }
 });
 
-// POST /api/vendors/photos — vendor uploads a portfolio photo
 router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided.' });
 
@@ -258,7 +243,6 @@ router.post('/photos', authenticate, requireRole('vendor'), upload.single('photo
   }
 });
 
-// DELETE /api/vendors/photos/:photoId — vendor deletes their own photo
 router.delete('/photos/:photoId', authenticate, requireRole('vendor'), async (req, res) => {
   try {
     const vendorRes = await pool.query('SELECT id FROM vendors WHERE user_id = $1', [req.user.id]);
@@ -276,9 +260,6 @@ router.delete('/photos/:photoId', authenticate, requireRole('vendor'), async (re
   }
 });
 
-// ── Dynamic param routes AFTER all named routes ──────────────────────────────
-
-// GET /api/vendors/:id — single vendor detail (includes photos)
 router.get('/:id', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -297,8 +278,6 @@ router.get('/:id', async (req, res) => {
     if (result.rowCount === 0) return res.status(404).json({ error: 'Vendor not found.' });
 
     const vendor = result.rows[0];
-
-    // Attach photos
     const photos = await pool.query(
       'SELECT id, photo_url, caption, description, event_type, subcategory, design_name, created_at FROM vendor_photos WHERE vendor_id = $1 ORDER BY event_type, id ASC',
       [vendor.id]
@@ -311,7 +290,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/vendors/:id/status — admin: approve, reject, or suspend
 router.patch('/:id/status', authenticate, requireRole('admin'), async (req, res) => {
   const { status } = req.body;
   if (!['approved', 'rejected', 'suspended'].includes(status)) {

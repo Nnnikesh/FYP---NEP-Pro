@@ -1,9 +1,3 @@
--- NEP-Pro - PostgreSQL Schema
--- Run this file to initialize the database structure
-
--- Create database (run separately if needed)
--- CREATE DATABASE "NEP-Pro";
-
 -- ============================================================
 -- USERS TABLE
 -- Stores all users: admins, event hosts, and vendors

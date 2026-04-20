@@ -4,8 +4,6 @@ const { authenticate, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/bookings
-// Hosts see their own bookings; vendors see bookings made for them; admin sees all
 router.get('/', authenticate, async (req, res) => {
   const { role, id } = req.user;
   try {
@@ -31,7 +29,6 @@ router.get('/', authenticate, async (req, res) => {
       `;
       params = [id];
     } else {
-      // host
       query = `
         SELECT b.*, v.business_name, v.image_url AS vendor_image,
                u.name AS vendor_contact_name, u.email AS vendor_email, u.phone AS vendor_phone
@@ -51,7 +48,6 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// GET /api/bookings/:id — single booking detail
 router.get('/:id', authenticate, async (req, res) => {
   const { role, id } = req.user;
   try {
@@ -70,7 +66,6 @@ router.get('/:id', authenticate, async (req, res) => {
 
     const booking = result.rows[0];
 
-    // Access control: host sees own, vendor sees theirs, admin sees all
     if (role === 'host' && booking.host_id !== id) {
       return res.status(403).json({ error: 'Access denied.' });
     }
@@ -87,7 +82,6 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/bookings/check-availability — check if any venue has conflicts on given dates
 router.post('/check-availability', async (req, res) => {
   const { venue_name, dates } = req.body;
   if (!venue_name || venue_name.trim().length < 3 || !Array.isArray(dates) || dates.length === 0) {
@@ -95,7 +89,6 @@ router.post('/check-availability', async (req, res) => {
   }
 
   try {
-    // ILIKE for case-insensitive matching; supports both hotel and custom venues
     const result = await pool.query(`
       SELECT DISTINCT event_date::text AS conflict_date
       FROM bookings
@@ -121,11 +114,9 @@ router.post('/check-availability', async (req, res) => {
   }
 });
 
-// POST /api/bookings — host creates a booking
 router.post('/', authenticate, requireRole('host'), async (req, res) => {
   const { vendor_id, event_dates, event_date, event_type, event_location, notes, agreed_amount, payment_method, selected_services, design_name } = req.body;
 
-  // Support both single event_date and multi event_dates array
   const datesArray = Array.isArray(event_dates) && event_dates.length > 0
     ? event_dates
     : event_date ? [event_date] : [];
@@ -137,7 +128,6 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
   const primaryDate = datesArray[0];
   const payMethod = ['online', 'cash'].includes(payment_method) ? payment_method : 'online';
 
-  // Normalise selected_services: accept string or array, store as comma-separated string
   let servicesText = null;
   if (Array.isArray(selected_services) && selected_services.length > 0) {
     servicesText = selected_services.join(',');
@@ -146,7 +136,6 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
   }
 
   try {
-    // Check vendor exists and is approved
     const vendorCheck = await pool.query(
       `SELECT id FROM vendors WHERE id = $1 AND status = 'approved'`, [vendor_id]
     );
@@ -165,7 +154,6 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
   }
 });
 
-// PATCH /api/bookings/:id/status — vendor confirms/cancels; host cancels; admin can set any
 router.patch('/:id/status', authenticate, async (req, res) => {
   const { status } = req.body;
   const { role, id } = req.user;
@@ -181,13 +169,11 @@ router.patch('/:id/status', authenticate, async (req, res) => {
   }
 
   try {
-    // Fetch the booking
     const bookingRes = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
     if (bookingRes.rowCount === 0) return res.status(404).json({ error: 'Booking not found.' });
 
     const booking = bookingRes.rows[0];
 
-    // Vendor can only update bookings assigned to them
     if (role === 'vendor') {
       const vendorCheck = await pool.query(
         'SELECT id FROM vendors WHERE user_id = $1 AND id = $2', [id, booking.vendor_id]
@@ -195,7 +181,6 @@ router.patch('/:id/status', authenticate, async (req, res) => {
       if (vendorCheck.rowCount === 0) return res.status(403).json({ error: 'Access denied.' });
     }
 
-    // Host can only cancel their own bookings
     if (role === 'host' && booking.host_id !== id) {
       return res.status(403).json({ error: 'Access denied.' });
     }
@@ -210,7 +195,6 @@ router.patch('/:id/status', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /api/bookings/:id — host updates booking details (before confirmation)
 router.patch('/:id', authenticate, requireRole('host'), async (req, res) => {
   const { event_date, event_location, notes, agreed_amount } = req.body;
 
@@ -238,7 +222,6 @@ router.patch('/:id', authenticate, requireRole('host'), async (req, res) => {
   }
 });
 
-// DELETE /api/bookings/:id — host deletes a pending booking; admin can delete any
 router.delete('/:id', authenticate, async (req, res) => {
   const { role, id } = req.user;
   try {

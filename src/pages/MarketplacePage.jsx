@@ -431,16 +431,14 @@ export default function MarketplacePage() {
                   <Card key={vendor.id} className="border-2 hover:border-primary/50 transition-all overflow-hidden group">
                     {/* Cover image */}
                     <Link to={`/vendor/${vendor.id}`} className="block relative aspect-video bg-muted overflow-hidden">
-                      {coverImage ? (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-4xl">🏪</div>
+                      {coverImage && (
                         <img
                           src={coverImage}
                           alt={vendor.business_name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={e => { e.currentTarget.style.display = 'none' }}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-4xl">
-                          🏪
-                        </div>
                       )}
                       {vendor.is_verified && (
                         <div className="absolute top-3 right-3">

@@ -1,14 +1,3 @@
-/**
- * eSewa EPay v2 — Payment Routes
- *
- * POST /api/payment/initiate      — build & return the signed form payload
- * GET  /api/payment/verify        — verify eSewa callback, mark deposit/balance paid
- * POST /api/payment/qr-confirm    — QR demo mode: mark deposit paid instantly
- *
- * Payment model: 20% deposit on booking confirmation, 80% balance after event.
- * payment_type in the request body: 'deposit' | 'balance'
- */
-
 const express  = require('express');
 const https    = require('https');
 const { v4: uuidv4 } = require('uuid');
@@ -18,7 +7,6 @@ const { generateSignature, verifySignature } = require('../middleware/esewaSigna
 
 const router = express.Router();
 
-// ── Secondary status check with eSewa API ──────────────────────────────────────
 function checkEsewaStatus({ product_code, total_amount, transaction_uuid }) {
   return new Promise((resolve) => {
     const base = process.env.ESEWA_STATUS_URL;
@@ -35,13 +23,6 @@ function checkEsewaStatus({ product_code, total_amount, transaction_uuid }) {
   });
 }
 
-// ── POST /api/payment/initiate ─────────────────────────────────────────────────
-/**
- * Body: { booking_id, payment_type }
- *   payment_type: 'deposit' (20%) | 'balance' (80%)
- *
- * Returns the complete signed form payload the frontend must POST to eSewa.
- */
 router.post('/initiate', authenticate, requireRole('host'), async (req, res) => {
   const { booking_id, payment_type } = req.body;
   if (!booking_id) return res.status(400).json({ error: 'booking_id is required.' });
@@ -130,11 +111,6 @@ router.post('/initiate', authenticate, requireRole('host'), async (req, res) => 
   }
 });
 
-// ── GET /api/payment/verify ────────────────────────────────────────────────────
-/**
- * Called by PaymentSuccess after eSewa redirects with ?data=<base64>.
- * Detects deposit vs balance by matching the transaction UUID.
- */
 router.get('/verify', async (req, res) => {
   const { data } = req.query;
   if (!data) return res.status(400).json({ error: 'Missing data parameter.' });
@@ -151,7 +127,6 @@ router.get('/verify', async (req, res) => {
       return res.status(400).json({ error: `Payment status is ${payload.status}, not COMPLETE.` });
     }
 
-    // Secondary confirmation from eSewa status API
     const statusRes = await checkEsewaStatus({
       product_code:     payload.product_code,
       total_amount:     payload.total_amount,
@@ -161,7 +136,6 @@ router.get('/verify', async (req, res) => {
       return res.status(400).json({ error: `eSewa status API returned: ${statusRes.status}` });
     }
 
-    // Detect payment type by matching UUID column
     let booking = null;
     let pType   = null;
 
@@ -236,13 +210,6 @@ router.get('/verify', async (req, res) => {
   }
 });
 
-// ── POST /api/payment/qr-confirm ───────────────────────────────────────────────
-/**
- * QR Code Demo Mode — simulates a successful deposit payment.
- * Marks deposit_status = 'paid', payment_status = 'partial', paid_amount = 20%.
- *
- * Body: { booking_id }
- */
 router.post('/qr-confirm', authenticate, requireRole('host'), async (req, res) => {
   const { booking_id } = req.body;
   if (!booking_id) return res.status(400).json({ error: 'booking_id is required.' });

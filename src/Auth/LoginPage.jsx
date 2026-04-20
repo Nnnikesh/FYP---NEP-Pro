@@ -17,7 +17,6 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 
 const API = 'http://localhost:5001'
 
-
 export default function LoginPage() {
   const { language } = useLanguage()
   const { login } = useAuth()
@@ -32,7 +31,6 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setIsLoading(true)
-
     try {
       const res = await fetch(`${API}/api/auth/login`, {
         method: 'POST',
@@ -40,14 +38,8 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Login failed.')
-        return
-      }
-
+      if (!res.ok) { setError(data.error || 'Login failed.'); return }
       login(data.user, data.token)
-
       if (data.user.role === 'admin') navigate('/admin')
       else if (data.user.role === 'vendor') navigate('/dashboard/vendor')
       else navigate('/')
@@ -60,50 +52,43 @@ export default function LoginPage() {
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        backgroundImage: 'url("/luxury-floral.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem 1rem',
-      }}
+      className="min-h-screen flex items-center justify-end bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: 'url("/Auth.jpg")' }}
     >
-      <div className="w-full max-w-md">
-        {/* Logo + heading */}
-        <div className="text-center mb-8 space-y-2">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: '#C2570B' }}>
-              <span className="text-white font-bold text-xl">NP</span>
-            </div>
-            <div className="text-left">
-              <div className="text-2xl font-bold" style={{ color: '#C2570B' }}>NEP</div>
-              <div className="text-xs -mt-1" style={{ color: '#9a6040' }}>PRO</div>
-            </div>
+      {/* dark overlay */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Card — right side */}
+      <div className="relative z-10 w-full max-w-md mx-6 lg:mr-20 lg:ml-auto">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: '#C2570B' }}>
+            <span className="text-white font-bold text-lg">NP</span>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: '#2d1a0e' }}>
+          <div>
+            <div className="text-xl font-bold text-white">NEP-PRO</div>
+            <div className="text-xs text-white/70">EVENT PLANNER</div>
+          </div>
+        </div>
+
+        <div className="mb-6 space-y-1 text-center">
+          <h1 className="text-2xl font-bold text-white">
             {language === 'en' ? 'Welcome Back' : 'स्वागत छ'}
           </h1>
-          <p className="text-sm" style={{ color: '#8a6a52' }}>
+          <p className="text-sm text-white/80">
             {language === 'en'
               ? 'Sign in to continue planning your perfect event'
               : 'आफ्नो सिद्ध कार्यक्रम योजना जारी राख्न साइन इन गर्नुहोस्'}
           </p>
         </div>
 
-        {/* Card */}
-        <Card
-          style={{
-            background: 'rgba(255, 255, 255, 0.87)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(194, 87, 11, 0.15)',
-            boxShadow: '0 8px 32px rgba(194, 87, 11, 0.1)',
-          }}
-        >
+        <Card style={{
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(194, 87, 11, 0.15)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        }}>
           <CardHeader>
             <CardTitle style={{ color: '#2d1a0e' }}>{language === 'en' ? 'Sign In' : 'साइन इन'}</CardTitle>
             <CardDescription>
@@ -128,7 +113,6 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
-                  style={{ background: 'rgba(255,255,255,0.7)' }}
                 />
               </div>
 
@@ -138,11 +122,7 @@ export default function LoginPage() {
                     <Lock className="h-4 w-4" />
                     {language === 'en' ? 'Password' : 'पासवर्ड'}
                   </Label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs hover:underline"
-                    style={{ color: '#C2570B' }}
-                  >
+                  <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: '#C2570B' }}>
                     {language === 'en' ? 'Forgot password?' : 'पासवर्ड भुल्नुभयो?'}
                   </Link>
                 </div>
@@ -155,7 +135,6 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading}
-                    style={{ background: 'rgba(255,255,255,0.7)' }}
                   />
                   <button
                     type="button"
@@ -170,15 +149,10 @@ export default function LoginPage() {
 
               {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-                style={{ background: '#C2570B', color: '#fff' }}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading} style={{ background: '#C2570B', color: '#fff' }}>
                 {isLoading
-                  ? language === 'en' ? 'Signing in...' : 'साइन इन हुँदैछ...'
-                  : language === 'en' ? 'Sign In' : 'साइन इन गर्नुहोस्'}
+                  ? (language === 'en' ? 'Signing in...' : 'साइन इन हुँदैछ...')
+                  : (language === 'en' ? 'Sign In' : 'साइन इन गर्नुहोस्')}
               </Button>
             </form>
           </CardContent>
@@ -189,9 +163,7 @@ export default function LoginPage() {
                 <span className="w-full border-t" style={{ borderColor: 'rgba(194,87,11,0.2)' }} />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 text-muted-foreground" style={{ background: 'rgba(255,255,255,0.87)' }}>
-                  {language === 'en' ? 'or' : 'वा'}
-                </span>
+                <span className="px-2 text-muted-foreground bg-white/90">{language === 'en' ? 'or' : 'वा'}</span>
               </div>
             </div>
             <p className="text-center text-sm text-muted-foreground">
@@ -203,7 +175,7 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
 
-        <p className="text-center text-xs mt-6 leading-relaxed" style={{ color: '#9a7060' }}>
+        <p className="text-center text-xs mt-4 leading-relaxed text-white/70">
           {language === 'en'
             ? 'By signing in, you agree to our Terms of Service and Privacy Policy'
             : 'साइन इन गरेर, तपाईं हाम्रो सेवा सर्तहरू र गोपनीयता नीतिमा सहमत हुनुहुन्छ'}

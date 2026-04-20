@@ -4,10 +4,8 @@ const { authenticate, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
-// All admin routes require authentication + admin role
 router.use(authenticate, requireRole('admin'));
 
-// GET /api/admin/stats - dashboard analytics
 router.get('/stats', async (req, res) => {
   try {
     const [users, vendors, pendingVendors, bookings, photos, unreadSupport] = await Promise.all([
@@ -32,7 +30,6 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// GET /api/admin/vendors — list all vendors with status (not just pending)
 router.get('/vendors', async (req, res) => {
   const { status } = req.query;
   try {
@@ -58,7 +55,6 @@ router.get('/vendors', async (req, res) => {
   }
 });
 
-// GET /api/admin/bookings — list all bookings
 router.get('/bookings', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -74,7 +70,6 @@ router.get('/bookings', async (req, res) => {
   }
 });
 
-// GET /api/admin/users - list all users
 router.get('/users', async (req, res) => {
   try {
     const result = await pool.query(
@@ -86,7 +81,6 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// PATCH /api/admin/users/:id/status - activate or deactivate user
 router.patch('/users/:id/status', async (req, res) => {
   const { is_active } = req.body;
   try {
@@ -101,7 +95,6 @@ router.patch('/users/:id/status', async (req, res) => {
   }
 });
 
-// GET /api/admin/photos — all vendor portfolio photos with vendor info
 router.get('/photos', async (req, res) => {
   try {
     const result = await pool.query(`

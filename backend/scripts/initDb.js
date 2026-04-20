@@ -4,7 +4,6 @@ const { Client } = require('pg');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 async function initDb() {
-  // Neon: the database already exists — connect directly via DATABASE_URL
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },

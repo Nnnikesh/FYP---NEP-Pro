@@ -15,7 +15,6 @@ function createTransporter() {
   });
 }
 
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password, role = 'host', phone, business_name } = req.body;
 
@@ -23,7 +22,6 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
 
-  // Vendor registration requires a business name
   if (role === 'vendor' && !business_name) {
     return res.status(400).json({ error: 'business_name is required for vendor registration.' });
   }
@@ -46,7 +44,6 @@ router.post('/register', async (req, res) => {
     );
     const user = userRes.rows[0];
 
-    // Auto-create vendor profile for vendor registrations
     if (role === 'vendor') {
       await client.query(
         `INSERT INTO vendors (user_id, business_name) VALUES ($1, $2)`,
@@ -69,7 +66,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -104,7 +100,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me — get current user info
 router.get('/me', authenticate, async (req, res) => {
   try {
     const result = await pool.query(
@@ -118,7 +113,6 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-// PATCH /api/auth/me — update own profile (name, phone, avatar_url)
 router.patch('/me', authenticate, async (req, res) => {
   const { name, phone, avatar_url } = req.body;
   try {
@@ -137,19 +131,17 @@ router.patch('/me', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required.' });
 
   try {
     const result = await pool.query('SELECT id, name FROM users WHERE email = $1 AND is_active = TRUE', [email]);
-    // Always return 200 to avoid email enumeration
     if (result.rowCount === 0) return res.json({ message: 'If that email exists, a reset link has been sent.' });
 
     const user = result.rows[0];
     const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
 
     await pool.query(
       'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
@@ -180,7 +172,6 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// POST /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: 'Token and new password are required.' });

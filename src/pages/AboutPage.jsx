@@ -43,8 +43,8 @@ export default function AboutPage() {
 
             <div>
               <img
-                src="/traditional-nepali-mandap-wedding-decoration-setup.jpg"
-                alt="Event Planning"
+                src="/About_Us.webp"
+                alt="About NEP-Pro"
                 style={{ width: '100%', height: 'auto', borderRadius: '12px', objectFit: 'cover', maxHeight: '450px' }}
               />
             </div>

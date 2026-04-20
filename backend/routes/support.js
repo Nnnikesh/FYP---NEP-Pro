@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../db');
 const { authenticate, requireRole } = require('../middleware/auth');
 
-// POST /api/support — submit a help message (public)
 router.post('/', async (req, res) => {
   const { name, email, subject, message } = req.body;
 
@@ -25,7 +24,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/support — fetch all messages (admin only)
 router.get('/', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(
@@ -37,7 +35,6 @@ router.get('/', authenticate, requireRole('admin'), async (req, res) => {
   }
 });
 
-// PATCH /api/support/:id/reply — admin sends a reply
 router.patch('/:id/reply', authenticate, requireRole('admin'), async (req, res) => {
   const { admin_reply } = req.body
   if (!admin_reply?.trim()) {
@@ -58,7 +55,6 @@ router.patch('/:id/reply', authenticate, requireRole('admin'), async (req, res) 
   }
 })
 
-// PATCH /api/support/:id/read — mark a message as read (admin only)
 router.patch('/:id/read', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(
@@ -72,7 +68,6 @@ router.patch('/:id/read', authenticate, requireRole('admin'), async (req, res) =
   }
 });
 
-// DELETE /api/support/:id — delete a message (admin only)
 router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(

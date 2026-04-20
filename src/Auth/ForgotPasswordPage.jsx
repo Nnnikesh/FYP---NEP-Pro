@@ -38,48 +38,43 @@ export default function ForgotPasswordPage() {
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        backgroundImage: 'url("/luxury-floral.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem 1rem',
-      }}
+      className="min-h-screen flex items-center justify-end bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: 'url("/Auth.jpg")' }}
     >
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8 space-y-2">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: '#C2570B' }}>
-              <span className="text-white font-bold text-xl">NP</span>
-            </div>
-            <div className="text-left">
-              <div className="text-2xl font-bold" style={{ color: '#C2570B' }}>NEP</div>
-              <div className="text-xs -mt-1" style={{ color: '#9a6040' }}>PRO</div>
-            </div>
+      {/* dark overlay */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Card — right side */}
+      <div className="relative z-10 w-full max-w-md mx-6 lg:mr-20 lg:ml-auto">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: '#C2570B' }}>
+            <span className="text-white font-bold text-lg">NP</span>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: '#2d1a0e' }}>
+          <div>
+            <div className="text-xl font-bold text-white">NEP-PRO</div>
+            <div className="text-xs text-white/70">EVENT PLANNER</div>
+          </div>
+        </div>
+
+        <div className="mb-6 space-y-1 text-center">
+          <h1 className="text-2xl font-bold text-white">
             {language === 'en' ? 'Forgot Password' : 'पासवर्ड भुल्नुभयो'}
           </h1>
-          <p className="text-sm" style={{ color: '#8a6a52' }}>
+          <p className="text-sm text-white/80">
             {language === 'en'
               ? "Enter your email and we'll send you a reset link"
               : 'आफ्नो इमेल प्रविष्ट गर्नुहोस् र हामी तपाईंलाई रिसेट लिंक पठाउनेछौं'}
           </p>
         </div>
 
-        <Card
-          style={{
-            background: 'rgba(255, 255, 255, 0.87)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(194, 87, 11, 0.15)',
-            boxShadow: '0 8px 32px rgba(194, 87, 11, 0.1)',
-          }}
-        >
+        <Card style={{
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(194, 87, 11, 0.15)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        }}>
           <CardHeader>
             <CardTitle style={{ color: '#2d1a0e' }}>
               {language === 'en' ? 'Reset Password' : 'पासवर्ड रिसेट'}
@@ -119,7 +114,6 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isLoading}
-                    style={{ background: 'rgba(255,255,255,0.7)' }}
                   />
                 </div>
 
