@@ -670,6 +670,7 @@ export default function VendorProfilePage() {
     if (eventTypes.length > 0 && activeTab === null) setActiveTab(eventTypes[0])
   }, [eventTypes.join(',')])
 
+
   const bookingUrl = activeTab
     ? `/booking/${id}?eventType=${encodeURIComponent(activeTab)}`
     : `/booking/${id}`
@@ -701,6 +702,7 @@ export default function VendorProfilePage() {
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/marketplace"><ArrowLeft className="h-4 w-4 mr-1" />Back to Marketplace</Link>
         </Button>
+
 
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="relative h-24 w-24 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden border border-border">

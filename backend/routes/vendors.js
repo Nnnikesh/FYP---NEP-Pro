@@ -300,7 +300,7 @@ router.patch('/:id/status', authenticate, requireRole('admin'), async (req, res)
     const result = await pool.query(
       `UPDATE vendors
        SET status = $1,
-           approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE NULL END
+           approved_at = CASE WHEN $1::text = 'approved' THEN NOW() ELSE NULL END
        WHERE id = $2 RETURNING id, business_name, status`,
       [status, req.params.id]
     );

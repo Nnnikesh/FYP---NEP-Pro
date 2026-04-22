@@ -155,7 +155,7 @@ router.post('/', authenticate, requireRole('host'), async (req, res) => {
 });
 
 router.patch('/:id/status', authenticate, async (req, res) => {
-  const { status } = req.body;
+  const { status, agreed_amount } = req.body;
   const { role, id } = req.user;
 
   const allowed = {
@@ -185,9 +185,17 @@ router.patch('/:id/status', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
+    const current = await pool.query('SELECT deposit_status FROM bookings WHERE id = $1', [req.params.id]);
+    const depositPaid = current.rows[0]?.deposit_status === 'paid';
+    const shouldRefund = status === 'cancelled' && depositPaid;
+
     const result = await pool.query(
-      `UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *`,
-      [status, req.params.id]
+      `UPDATE bookings
+       SET status = $1,
+           agreed_amount = COALESCE($2, agreed_amount),
+           refund_status = CASE WHEN $3 THEN 'pending' ELSE refund_status END
+       WHERE id = $4 RETURNING *`,
+      [status, agreed_amount || null, shouldRefund, req.params.id]
     );
     res.json(result.rows[0]);
   } catch (err) {

@@ -274,12 +274,20 @@ export default function ClientDashboard() {
                         )}
                       </div>
                     </div>
-                    <Badge
-                      variant={STATUS_COLOR[b.status] || 'secondary'}
-                      className="capitalize flex-shrink-0"
-                    >
-                      {b.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge
+                        variant={STATUS_COLOR[b.status] || 'secondary'}
+                        className="capitalize flex-shrink-0"
+                      >
+                        {b.status}
+                      </Badge>
+                      {b.refund_status === 'pending' && (
+                        <Badge className="bg-yellow-500 text-white text-xs">Refund Pending</Badge>
+                      )}
+                      {b.refund_status === 'refunded' && (
+                        <Badge className="bg-green-600 text-white text-xs">Refunded</Badge>
+                      )}
+                    </div>
                   </div>
 
                   {b.notes && (
@@ -382,6 +390,14 @@ export default function ClientDashboard() {
                         >
                           <Star className="h-3.5 w-3.5" />
                           Leave Review
+                        </Button>
+                      )}
+                      {b.selected_services && (
+                        <Button size="sm" variant="outline" asChild className="gap-1 bg-transparent">
+                          <Link to={`/booking/${b.id}/design`}>
+                            <Sparkles className="h-3.5 w-3.5" />
+                            View Design
+                          </Link>
                         </Button>
                       )}
                       <Button size="sm" variant="ghost" asChild>

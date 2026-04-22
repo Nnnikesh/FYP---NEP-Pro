@@ -182,6 +182,12 @@ ALTER TABLE vendor_photos ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS design_name VARCHAR(100);
 
 -- ============================================================
+-- MIGRATION: Refund tracking on bookings
+-- ============================================================
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS refund_status VARCHAR(20) DEFAULT 'none'
+    CHECK (refund_status IN ('none', 'pending', 'refunded'));
+
+-- ============================================================
 -- MIGRATION: eSewa EPay v2 — paid_amount and transaction_id
 -- paid_amount: cumulative amount paid (deposit + balance)
 -- transaction_id: eSewa transaction_code or QR-DEMO-<ts> for demo

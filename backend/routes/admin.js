@@ -70,6 +70,19 @@ router.get('/bookings', async (req, res) => {
   }
 });
 
+router.patch('/bookings/:id/refund', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE bookings SET refund_status = 'refunded' WHERE id = $1 AND refund_status = 'pending' RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Booking not found or not pending refund.' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/users', async (req, res) => {
   try {
     const result = await pool.query(

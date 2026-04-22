@@ -448,6 +448,7 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="text-xs">ID</TableHead>
                         <TableHead>Business</TableHead>
                         <TableHead>Owner</TableHead>
                         <TableHead>Location</TableHead>
@@ -460,6 +461,7 @@ export default function AdminPage() {
                     <TableBody>
                       {filteredAllVendors.map((vendor) => (
                         <TableRow key={vendor.id}>
+                          <TableCell className="text-xs font-mono text-muted-foreground">#{vendor.id}</TableCell>
                           <TableCell className="font-medium">{vendor.business_name}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{vendor.name}</TableCell>
                           <TableCell className="text-sm">{vendor.location || '—'}</TableCell>
@@ -554,6 +556,7 @@ export default function AdminPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="text-xs">ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
@@ -565,12 +568,13 @@ export default function AdminPage() {
                       <TableBody>
                         {filteredUsers.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                               No users match your filters.
                             </TableCell>
                           </TableRow>
                         ) : filteredUsers.map((user) => (
                           <TableRow key={user.id}>
+                            <TableCell className="text-xs font-mono text-muted-foreground">#{user.id}</TableCell>
                             <TableCell className="font-medium">{user.name}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
                             <TableCell>
@@ -631,17 +635,20 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="text-xs">ID</TableHead>
                         <TableHead>Host</TableHead>
                         <TableHead>Vendor</TableHead>
                         <TableHead>Event Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Budget</TableHead>
+                        <TableHead>Refund</TableHead>
                         <TableHead>Booked On</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {bookings?.map((b) => (
                         <TableRow key={b.id}>
+                          <TableCell className="text-xs font-mono text-muted-foreground">#{b.id}</TableCell>
                           <TableCell>
                             <div className="font-medium">{b.host_name}</div>
                             <div className="text-xs text-muted-foreground">{b.host_email}</div>
@@ -660,6 +667,28 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell className="text-sm">
                             {b.budget ? `NPR ${Number(b.budget).toLocaleString()}` : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {b.refund_status === 'pending' && (
+                              <button
+                                className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded font-medium transition-colors"
+                                onClick={async () => {
+                                  await fetch(`${API}/api/admin/bookings/${b.id}/refund`, {
+                                    method: 'PATCH',
+                                    headers: { Authorization: `Bearer ${token}` },
+                                  })
+                                  reloadBookings()
+                                }}
+                              >
+                                Mark Refunded
+                              </button>
+                            )}
+                            {b.refund_status === 'refunded' && (
+                              <Badge className="bg-green-600 text-white text-xs">Refunded</Badge>
+                            )}
+                            {(!b.refund_status || b.refund_status === 'none') && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm">{new Date(b.created_at).toLocaleDateString()}</TableCell>
                         </TableRow>

@@ -218,11 +218,6 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
             Upload Portfolio Photo
           </h3>
 
-          {/* Structure guide */}
-          <div className="mb-4 p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-800 text-xs space-y-1 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-300">
-            <p className="font-semibold">Portfolio structure: 3 designs × 4 photos each</p>
-            <p>Select the correct Event Type → Design Group → Sub-category so your portfolio stays consistently organised.</p>
-          </div>
 
           <form onSubmit={handleUpload} className="space-y-4">
             {/* Event Type */}
@@ -393,6 +388,7 @@ function PhotosTab({ token, vendorId, onPhotosChange, setConfirm }) {
 function BookingsTab({ token, onBookingsChange, setConfirm }) {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [priceInputs, setPriceInputs] = useState({})
 
   const load = async () => {
     try {
@@ -411,11 +407,11 @@ function BookingsTab({ token, onBookingsChange, setConfirm }) {
 
   useEffect(() => { load() }, [])
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status, agreed_amount) => {
     await fetch(`${API}/api/bookings/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...(agreed_amount ? { agreed_amount: Number(agreed_amount) } : {}) }),
     })
     load()
   }
@@ -523,16 +519,32 @@ function BookingsTab({ token, onBookingsChange, setConfirm }) {
               )}
 
               {b.status === 'pending' && (
-                <div className="flex gap-2 pt-1">
-                  <Button size="sm" className="gap-1" onClick={() => updateStatus(b.id, 'confirmed')}>
-                    <CheckCircle className="h-4 w-4" />Confirm
-                  </Button>
-                  <Button
-                    size="sm" variant="destructive" className="gap-1"
-                    onClick={() => confirmDecline(b.id, b.host_name)}
-                  >
-                    <XCircle className="h-4 w-4" />Decline
-                  </Button>
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Set agreed price (NPR)"
+                      value={priceInputs[b.id] || ''}
+                      onChange={e => setPriceInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
+                      className="max-w-[200px] h-8 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      className="gap-1"
+                      disabled={!priceInputs[b.id]}
+                      onClick={() => updateStatus(b.id, 'confirmed', priceInputs[b.id])}
+                    >
+                      <CheckCircle className="h-4 w-4" />Confirm
+                    </Button>
+                    <Button
+                      size="sm" variant="destructive" className="gap-1"
+                      onClick={() => confirmDecline(b.id, b.host_name)}
+                    >
+                      <XCircle className="h-4 w-4" />Decline
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Enter the agreed amount before confirming</p>
                 </div>
               )}
 

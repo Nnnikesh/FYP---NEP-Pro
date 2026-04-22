@@ -47,18 +47,27 @@ function EsewaQRCode() {
 
 // ── Main Modal ─────────────────────────────────────────────────────────────────
 export default function QRPaymentModal({ booking, depositAmount, token, onClose, onSuccess }) {
-  const [phase, setPhase]         = useState('waiting')  // waiting | confirming | success | error
-  const [countdown, setCountdown] = useState(COUNTDOWN)
-  const [errMsg, setErrMsg]       = useState('')
-  const confirmedRef              = useRef(false)
+  const [phase, setPhase]             = useState('waiting')  // waiting | confirming | success | error
+  const [countdown, setCountdown]     = useState(COUNTDOWN)
+  const [thankYouTimer, setThankYouTimer] = useState(12)
+  const [errMsg, setErrMsg]           = useState('')
+  const confirmedRef                  = useRef(false)
 
-  // Countdown tick
+  // Countdown tick (QR waiting phase)
   useEffect(() => {
     if (phase !== 'waiting') return
     if (countdown === 0) { confirmPayment(); return }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000)
     return () => clearTimeout(t)
   }, [countdown, phase])
+
+  // Thank you countdown after success
+  useEffect(() => {
+    if (phase !== 'success') return
+    if (thankYouTimer === 0) { onSuccess(); return }
+    const t = setTimeout(() => setThankYouTimer(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [thankYouTimer, phase])
 
   const confirmPayment = async () => {
     if (confirmedRef.current) return
@@ -73,7 +82,6 @@ export default function QRPaymentModal({ booking, depositAmount, token, onClose,
       const data = await res.json()
       if (!res.ok) { setErrMsg(data.error || 'Confirmation failed.'); setPhase('error'); return }
       setPhase('success')
-      setTimeout(() => { onSuccess() }, 2500)
     } catch {
       setErrMsg('Could not reach server. Please try again.')
       setPhase('error')
@@ -104,17 +112,31 @@ export default function QRPaymentModal({ booking, depositAmount, token, onClose,
 
           {/* ── Success Screen ── */}
           {phase === 'success' && (
-            <div className="text-center space-y-4 py-4">
+            <div className="text-center space-y-5 py-4">
               <CheckCircle className="h-20 w-20 mx-auto text-green-500 animate-bounce" />
-              <div>
-                <h2 className="text-xl font-bold">Payment Successful ✅</h2>
-                <p className="text-muted-foreground text-sm mt-1">
-                  NPR {depositAmount.toLocaleString()} deposit confirmed
+              <div className="space-y-1">
+                <h2 className="text-xl font-bold text-green-600">Thank You! 🎉</h2>
+                <p className="text-base font-semibold">
+                  Thank you for paying your 20% deposit!
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  NPR {depositAmount.toLocaleString()} confirmed for {booking.business_name}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Redirecting to your bookings…
+              <p className="text-sm text-muted-foreground">
+                Your booking is now secured. The remaining 80% is due after the event.
               </p>
+              <div className="space-y-1">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${((12 - thankYouTimer) / 12) * 100}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Redirecting in {thankYouTimer}s…
+                </p>
+              </div>
             </div>
           )}
 

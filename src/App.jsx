@@ -23,6 +23,7 @@ import AdminPortfolioPhotos from './pages/AdminPortfolioPhotos.jsx'
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
 import PaymentFailure from './pages/PaymentFailure.jsx'
 import PaymentPage from './pages/PaymentPage.jsx'
+import BookingDesignPage from './pages/BookingDesignPage.jsx'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -54,6 +55,14 @@ export default function App() {
               {/* Payment callback pages — outside MainLayout so no nav chrome */}
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
+              <Route
+                path="/booking/:bookingId/design"
+                element={
+                  <ProtectedRoute roles={['host']}>
+                    <BookingDesignPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/payment/:bookingId"
                 element={
